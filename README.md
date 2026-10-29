@@ -76,11 +76,15 @@ https://<votre-domaine>/api/mcp/<MCP_TOKEN>
 - **ChatGPT** : Paramètres → Connecteurs (mode développeur) → Créer → coller l'URL.
 - **Claude Code / autres clients** : transport `http` avec la même URL.
 
-Outils disponibles : `list_weeks`, `get_week`, `generate_week`, `create_week`, `set_shift`, `remove_shift`, `set_leave`, `set_constraint`, `set_cleaning`, `set_requirements`, `set_week_status`, `get_team`. Les réponses contiennent un rendu Markdown (tableaux) et, dans les clients compatibles **MCP Apps** (Claude, ChatGPT…), une vue graphique interactive du planning (`ui://planning-creche/week.html`, construite depuis `src/mcp-ui/` par `pnpm build:api`).
+Outils de lecture : `list_weeks`, `get_week`, `get_team`, `get_children`.
+
+Outils de modification (tous les champs) : `generate_week`, `create_week`, `delete_week`, `set_week_status`, `set_notes`, `set_shift`, `remove_shift`, `set_leave`, `set_constraint`, `set_cleaning`, `set_requirements`, `upsert_employee` (contrat, jours, statut, pauses, journée fixe, amplitude, « jamais seule », active, animal, couleur, création), `delete_employee`, `upsert_child` (référente, relais, présences, animal, création), `delete_child`, `update_rules`, `save_week_as_defaults`, `reset_week_from_defaults`.
+
+**Confirmation** : chaque modification est d'abord renvoyée sous forme d'aperçu (« avant → après ») sans rien enregistrer ; l'assistant demande l'accord de l'utilisatrice puis rappelle l'outil avec `confirm: true`. Si le client MCP gère l'« elicitation », la question est posée directement dans l'interface. Les réponses contiennent un rendu Markdown (tableaux) et, dans les clients compatibles **MCP Apps** (Claude, ChatGPT…), une vue graphique interactive du planning (`ui://planning-creche/week.html`, construite depuis `src/mcp-ui/` par `pnpm build:api`).
 
 Exemples de demandes : « Affiche le planning de cette semaine », « Lucie est en congé lundi, régénère le planning », « Fanny ouvre à 6h45 mardi », « Affecte Isabelle au ménage du jeudi ».
 
-Test local : `pnpm dev:api` puis `pnpm mcp:test` (nécessite `.env`).
+Tests locaux : `pnpm dev:api` puis `pnpm mcp:test` (lecture) ou `pnpm mcp:test:confirm` (flux de confirmation sur une semaine jetable) ; nécessite `.env`.
 
 Scripts utiles pour le solveur : `pnpm dlx tsx scripts/try-example.ts` (planning de l'exemple) et `pnpm dlx tsx scripts/bench.ts` (robustesse sur plusieurs graines).
 

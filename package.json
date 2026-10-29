@@ -12,7 +12,8 @@
     "typecheck": "tsx scripts/build-mcp-ui.ts && tsc -b",
     "build:mcp-ui": "tsx scripts/build-mcp-ui.ts",
     "mcp:test": "tsx scripts/mcp-client-test.ts",
-    "build:api": "tsx scripts/build-mcp-ui.ts && tsx scripts/build-api.ts"
+    "build:api": "tsx scripts/build-mcp-ui.ts && tsx scripts/build-api.ts",
+    "mcp:test:confirm": "tsx scripts/mcp-confirm-test.ts"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
