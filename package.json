@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && tsx scripts/build-mcp-ui.ts && vite build",
+    "build": "tsc -b && tsx scripts/build-mcp-ui.ts && tsx scripts/build-api.ts && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "dev:api": "tsx scripts/api-server.ts",
     "typecheck": "tsc -b",
     "build:mcp-ui": "tsx scripts/build-mcp-ui.ts",
-    "mcp:test": "tsx scripts/mcp-client-test.ts"
+    "mcp:test": "tsx scripts/mcp-client-test.ts",
+    "build:api": "tsx scripts/build-mcp-ui.ts && tsx scripts/build-api.ts"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

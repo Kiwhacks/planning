@@ -58,7 +58,7 @@ API_PORT=3001 pnpm dev
 2. **Vercel** : importer le dépôt GitHub (préréglage Vite détecté automatiquement, `vercel.json` fournit les réécritures). Définir les variables d'environnement :
    - `DATABASE_URL` : chaîne de connexion Neon ;
    - `APP_PASSWORD` : code d'accès demandé à l'ouverture de l'application (recommandé, les prénoms des enfants sont des données personnelles).
-3. Déployer. L'API est la fonction `api/index.ts` (routes `/api/data`, `/api/template`, `/api/weeks/:id`).
+3. Déployer. Les fonctions `api/index.js` (routes `/api/data`, `/api/template`, `/api/weeks/:id`) et `api/mcp.js` sont générées depuis `server/` par `pnpm build:api` ; lancez-le (ou `pnpm build`) avant de pousser une modification du serveur.
 
 Le code d'accès est mémorisé dans le navigateur après la première saisie. Pour le changer, modifier `APP_PASSWORD` dans Vercel et redéployer.
 
@@ -76,7 +76,7 @@ https://<votre-domaine>/api/mcp/<MCP_TOKEN>
 - **ChatGPT** : Paramètres → Connecteurs (mode développeur) → Créer → coller l'URL.
 - **Claude Code / autres clients** : transport `http` avec la même URL.
 
-Outils disponibles : `list_weeks`, `get_week`, `generate_week`, `create_week`, `set_shift`, `remove_shift`, `set_leave`, `set_constraint`, `set_cleaning`, `set_requirements`, `set_week_status`, `get_team`. Les réponses contiennent un rendu Markdown (tableaux) et, dans les clients compatibles **MCP Apps** (Claude, ChatGPT…), une vue graphique interactive du planning (`ui://planning-creche/week.html`, construite depuis `src/mcp-ui/` par `pnpm build:mcp-ui`).
+Outils disponibles : `list_weeks`, `get_week`, `generate_week`, `create_week`, `set_shift`, `remove_shift`, `set_leave`, `set_constraint`, `set_cleaning`, `set_requirements`, `set_week_status`, `get_team`. Les réponses contiennent un rendu Markdown (tableaux) et, dans les clients compatibles **MCP Apps** (Claude, ChatGPT…), une vue graphique interactive du planning (`ui://planning-creche/week.html`, construite depuis `src/mcp-ui/` par `pnpm build:api`).
 
 Exemples de demandes : « Affiche le planning de cette semaine », « Lucie est en congé lundi, régénère le planning », « Fanny ouvre à 6h45 mardi », « Affecte Isabelle au ménage du jeudi ».
 
@@ -87,7 +87,8 @@ Scripts utiles pour le solveur : `pnpm dlx tsx scripts/try-example.ts` (planning
 ## Structure
 
 ```
-api/index.ts      fonction Vercel : API de persistance (Neon / PostgreSQL)
+server/           sources des fonctions Vercel : data.ts (API de persistance), mcp.ts (serveur MCP), shared.ts (base Neon)
+api/              fonctions déployées (index.js, mcp.js), regroupées par esbuild depuis server/ (`pnpm build:api`, versionnées)
 db/schema.sql     schéma de la base
 src/domain/       types, règles métier, modèle, évaluation des contraintes, suggestions, solveur (+ web worker)
 src/store/        état (zustand), synchronisation avec l'API, navigation par semaine, hook du solveur

@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# généré par scripts/build-mcp-ui.ts (intégré dans api/mcp.js)
+server/ui.generated.ts
+*.tsbuildinfo

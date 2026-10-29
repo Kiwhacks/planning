@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { ensureSchema, getSql, loadTemplate, loadWeeks, saveTemplate, saveWeek, deleteWeek as deleteWeekRow } from './_shared'
+import { ensureSchema, getSql, loadTemplate, loadWeeks, saveTemplate, saveWeek, deleteWeek as deleteWeekRow } from './shared'
 import type { Week } from '../src/domain/types'
 
 /**

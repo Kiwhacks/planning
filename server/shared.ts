@@ -1,4 +1,4 @@
-// Fichier partagé entre les fonctions API (préfixe « _ » : non exposé comme route par Vercel).
+// Accès à la base (partagé par les fonctions API). Les fonctions sont regroupées en un fichier par esbuild (scripts/build-api.ts) vers api/*.js.
 import { neon, type NeonQueryFunction } from '@neondatabase/serverless'
 import type { Schedule, TemplateConfig, Week, WeekConfig } from '../src/domain/types'
 

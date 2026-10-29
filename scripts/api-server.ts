@@ -4,8 +4,10 @@
  */
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { readFileSync } from 'node:fs'
-import handler from '../api/index'
-import mcpHandler from '../api/mcp'
+// USE_BUNDLE=1 : utilise les fonctions regroupées api/*.js (comme sur Vercel) au lieu des sources server/*.ts
+const bundle = !!process.env.USE_BUNDLE
+const handler = (bundle ? await import('../api/index.js') : await import('../server/data')).default
+const mcpHandler = (bundle ? await import('../api/mcp.js') : await import('../server/mcp')).default
 
 try {
   for (const line of readFileSync('.env', 'utf8').split('\n')) {
