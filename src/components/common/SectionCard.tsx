@@ -12,7 +12,7 @@ interface Props {
 export function SectionCard({ title, description, actions, children, className }: Props) {
   return (
     <Card className={className}>
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <CardHeader className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:gap-4">
         <div className="space-y-1">
           <CardTitle>{title}</CardTitle>
           {description && <CardDescription>{description}</CardDescription>}

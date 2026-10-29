@@ -1,4 +1,5 @@
 import { h } from './time'
+import { ADULT_ANIMALS, BABY_ANIMALS, pickAnimal } from './animals'
 import type { Child, CleaningDay, Employee, Leave, Pin, Requirement, Rules, TemplateConfig, WeekConfig, DayIndex } from './types'
 
 export const EMPLOYEE_COLORS = [
@@ -37,10 +38,11 @@ export function defaultCleaning(rules: Rules): Partial<Record<DayIndex, Cleaning
   return out
 }
 
-export function makeEmployee(partial: Partial<Employee> & { name: string }, rules: Rules, index = 0): Employee {
+export function makeEmployee(partial: Partial<Employee> & { name: string }, rules: Rules, index = 0, existing: Employee[] = []): Employee {
   return {
     id: newId('emp'),
     color: EMPLOYEE_COLORS[index % EMPLOYEE_COLORS.length],
+    avatar: pickAnimal(ADULT_ANIMALS, existing.map((e) => e.avatar), index),
     role: 'pro',
     weeklyMinutes: h(35),
     workDays: [...rules.openDays],
@@ -55,9 +57,10 @@ export function makeEmployee(partial: Partial<Employee> & { name: string }, rule
   }
 }
 
-export function makeChild(partial: Partial<Child> & { name: string }): Child {
+export function makeChild(partial: Partial<Child> & { name: string }, existing: Child[] = []): Child {
   return {
     id: newId('chd'),
+    avatar: pickAnimal(BABY_ANIMALS, existing.map((c) => c.avatar), existing.length),
     referentId: null,
     relaisId: null,
     attendance: {},
@@ -88,7 +91,7 @@ export function buildExampleTemplate(): TemplateConfig {
     makeEmployee({ id: 'emp_fanny', name: 'Fanny', weeklyMinutes: h(33, 30) }, rules, 3),
     makeEmployee({ id: 'emp_lucie', name: 'Lucie', weeklyMinutes: h(33, 30) }, rules, 4),
   ]
-  return { employees, children: [], rules, requirements: structuredClone(EXAMPLE_REQUIREMENTS), cleaning: defaultCleaning(rules) }
+  return migrateTemplate({ employees, children: [], rules, requirements: structuredClone(EXAMPLE_REQUIREMENTS), cleaning: defaultCleaning(rules) })
 }
 
 /** Spécificités de la semaine d'exemple (congés et contraintes fixes). */
@@ -120,7 +123,18 @@ export function weekConfigFromTemplate(t: TemplateConfig): WeekConfig {
 export function migrateTemplate<T extends TemplateConfig>(t: T): T {
   const rules = { ...DEFAULT_RULES, ...t.rules }
   const cleaning = t.cleaning ?? defaultCleaning(rules)
-  return { ...t, rules, cleaning, children: t.children ?? [], requirements: t.requirements ?? {} }
+  // attribue un animal à chaque personne / enfant, sans doublon
+  const employees: Employee[] = []
+  for (const [i, e] of (t.employees ?? []).entries()) {
+    const used = employees.map((x) => x.avatar)
+    employees.push(e.avatar && !used.includes(e.avatar) ? e : { ...e, avatar: pickAnimal(ADULT_ANIMALS, used, i) })
+  }
+  const children: Child[] = []
+  for (const [i, c] of (t.children ?? []).entries()) {
+    const used = children.map((x) => x.avatar)
+    children.push(c.avatar && !used.includes(c.avatar) ? c : { ...c, avatar: pickAnimal(BABY_ANIMALS, used, i) })
+  }
+  return { ...t, rules, cleaning, employees, children, requirements: t.requirements ?? {} }
 }
 
 export function migrateWeekConfig(c: WeekConfig): WeekConfig {

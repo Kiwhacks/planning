@@ -37,10 +37,10 @@ export function WeekNav() {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:flex-none sm:gap-2">
       <Button variant="outline" size="icon-sm" onClick={() => go(-1)} aria-label="Semaine précédente"><ChevronLeft /></Button>
-      <div className="min-w-56 text-center">
-        <div className="text-sm font-medium">{weekLabel(monday)}</div>
+      <div className="min-w-0 flex-1 text-center sm:min-w-56 sm:flex-none">
+        <div className="truncate text-xs font-medium sm:text-sm">{weekLabel(monday)}</div>
         <div className="text-xs text-muted-foreground">
           {week ? (
             <Badge variant={week.status === 'validated' ? 'default' : 'secondary'}>{week.status === 'validated' ? 'Validé' : 'Brouillon'}</Badge>
@@ -50,7 +50,7 @@ export function WeekNav() {
         </div>
       </div>
       <Button variant="outline" size="icon-sm" onClick={() => go(1)} aria-label="Semaine suivante"><ChevronRight /></Button>
-      <Button variant="ghost" size="sm" onClick={today} disabled={currentWeekId === weekIdOf(new Date())}>Aujourd’hui</Button>
+      <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={today} disabled={currentWeekId === weekIdOf(new Date())}>Aujourd’hui</Button>
     </div>
   )
 }

@@ -15,6 +15,7 @@ import { fmtDuration, h, toHHMM } from '@/domain/time'
 import { DAY_LABELS, type DayIndex, type Leave, type Pin, type Week } from '@/domain/types'
 import { useStore } from '@/store/useStore'
 import { cn } from '@/lib/utils'
+import { AnimalAvatar } from '@/components/common/AnimalAvatar'
 import { TemplateBanner } from './TemplateBanner'
 
 export function WeekSettingsTab({ week }: { week: Week }) {
@@ -131,7 +132,7 @@ export function WeekSettingsTab({ week }: { week: Week }) {
           <div className="space-y-2">
             {config.leaves.length === 0 && <p className="text-sm text-muted-foreground italic">Aucune absence cette semaine.</p>}
             {config.leaves.map((lv) => (
-              <div key={lv.id} className="grid grid-cols-[1fr_1fr_5rem_1fr_1.75rem] items-center gap-1.5">
+              <div key={lv.id} className="grid grid-cols-[1fr_1fr_1.75rem] items-center gap-1.5 sm:grid-cols-[1fr_1fr_5rem_1fr_1.75rem]">
                 <EmployeeSelect
                   employees={employees}
                   value={lv.employeeId}
@@ -145,9 +146,9 @@ export function WeekSettingsTab({ week }: { week: Week }) {
                   }
                 />
                 <DaySelect value={lv.day} days={days} onChange={(d) => update(week.id, (c) => { c.leaves.find((x) => x.id === lv.id)!.day = d })} />
+                <Button size="icon-sm" variant="ghost" className="sm:order-last" aria-label="Supprimer" onClick={() => update(week.id, (c) => { c.leaves = c.leaves.filter((x) => x.id !== lv.id) })}><Trash2 /></Button>
                 <DurationInput value={lv.minutes} onChange={(m) => m != null && update(week.id, (c) => { c.leaves.find((x) => x.id === lv.id)!.minutes = m })} />
-                <Input value={lv.label} placeholder="Motif" onChange={(e) => update(week.id, (c) => { c.leaves.find((x) => x.id === lv.id)!.label = e.target.value })} />
-                <Button size="icon-sm" variant="ghost" aria-label="Supprimer" onClick={() => update(week.id, (c) => { c.leaves = c.leaves.filter((x) => x.id !== lv.id) })}><Trash2 /></Button>
+                <Input className="col-span-2 sm:col-span-1" value={lv.label} placeholder="Motif" onChange={(e) => update(week.id, (c) => { c.leaves.find((x) => x.id === lv.id)!.label = e.target.value })} />
               </div>
             ))}
             <p className="text-xs text-muted-foreground">Colonnes : personne · jour · heures comptées · motif.</p>
@@ -176,26 +177,26 @@ export function WeekSettingsTab({ week }: { week: Week }) {
             {config.pins.length === 0 && <p className="text-sm text-muted-foreground italic">Aucune contrainte fixe cette semaine.</p>}
             {config.pins.map((p) => (
               <div key={p.id} className="space-y-1.5 rounded-md border p-2">
-                <div className="grid grid-cols-[1fr_1fr_1fr_1.75rem] items-center gap-1.5">
+                <div className="grid grid-cols-[1fr_1fr_1.75rem] items-center gap-1.5 sm:grid-cols-[1fr_1fr_1fr_1.75rem]">
                   <EmployeeSelect employees={employees} value={p.employeeId} onChange={(id) => id && update(week.id, (c) => { c.pins.find((x) => x.id === p.id)!.employeeId = id })} />
                   <DaySelect value={p.day} days={days} onChange={(d) => update(week.id, (c) => { c.pins.find((x) => x.id === p.id)!.day = d })} />
+                  <Button size="icon-sm" variant="ghost" className="sm:order-last" aria-label="Supprimer" onClick={() => update(week.id, (c) => { c.pins = c.pins.filter((x) => x.id !== p.id) })}><Trash2 /></Button>
                   <Select value={p.mustWork === null ? 'free' : p.mustWork ? 'work' : 'off'} onValueChange={(v) => update(week.id, (c) => { c.pins.find((x) => x.id === p.id)!.mustWork = v === 'free' ? null : v === 'work' })}>
-                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="col-span-2 w-full sm:col-span-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="work">Travaille ce jour</SelectItem>
                       <SelectItem value="off">Ne travaille pas</SelectItem>
                       <SelectItem value="free">Au choix</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button size="icon-sm" variant="ghost" aria-label="Supprimer" onClick={() => update(week.id, (c) => { c.pins = c.pins.filter((x) => x.id !== p.id) })}><Trash2 /></Button>
                 </div>
                 {p.mustWork !== false && (
-                  <div className="grid grid-cols-[auto_1fr_auto_1fr_1.5fr] items-center gap-1.5">
+                  <div className="grid grid-cols-[auto_1fr_auto_1fr] items-center gap-1.5 sm:grid-cols-[auto_1fr_auto_1fr_1.5fr]">
                     <Label className="text-xs">Arrive à</Label>
                     <TimeInput value={p.start} allowEmpty onChange={(v) => update(week.id, (c) => { c.pins.find((x) => x.id === p.id)!.start = v })} />
                     <Label className="text-xs">Part à</Label>
                     <TimeInput value={p.end} allowEmpty onChange={(v) => update(week.id, (c) => { c.pins.find((x) => x.id === p.id)!.end = v })} />
-                    <Input value={p.note} placeholder="Note (ex. ouvre)" onChange={(e) => update(week.id, (c) => { c.pins.find((x) => x.id === p.id)!.note = e.target.value })} />
+                    <Input className="col-span-4 sm:col-span-1" value={p.note} placeholder="Note (ex. ouvre)" onChange={(e) => update(week.id, (c) => { c.pins.find((x) => x.id === p.id)!.note = e.target.value })} />
                   </div>
                 )}
               </div>
@@ -251,10 +252,11 @@ function CleaningEditor({ week, day }: { week: Week; day: DayIndex }) {
               <button
                 key={e.id}
                 type="button"
-                className={cn('rounded-full border px-2 py-0.5 transition-colors', on ? 'border-transparent text-white' : 'border-border bg-background text-muted-foreground hover:bg-muted')}
+                className={cn('inline-flex items-center gap-1 rounded-full border py-0.5 pr-2 pl-0.5 transition-colors', on ? 'border-transparent text-white' : 'border-border bg-background text-muted-foreground hover:bg-muted')}
                 style={on ? { background: e.color } : undefined}
                 onClick={() => setCl((c) => { c.employeeIds = on ? c.employeeIds.filter((x) => x !== e.id) : [...c.employeeIds, e.id] })}
               >
+                <AnimalAvatar animal={e.avatar} size="xs" />
                 {e.name}
               </button>
             )

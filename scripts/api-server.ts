@@ -5,6 +5,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { readFileSync } from 'node:fs'
 import handler from '../api/index'
+import mcpHandler from '../api/mcp'
 
 try {
   for (const line of readFileSync('.env', 'utf8').split('\n')) {
@@ -21,7 +22,17 @@ createServer(async (req: IncomingMessage, res: ServerResponse) => {
   const chunks: Buffer[] = []
   for await (const c of req) chunks.push(c as Buffer)
   const raw = Buffer.concat(chunks).toString('utf8')
-  const vreq = Object.assign(req, { body: raw ? JSON.parse(raw) : undefined, query: {}, cookies: {} })
+  const url = new URL(req.url ?? '/', 'http://localhost')
+  const query: Record<string, string> = {}
+  url.searchParams.forEach((v, k) => (query[k] = v))
+  // /api/mcp/<token> → /api/mcp?token=<token> (comme la réécriture Vercel)
+  const mcpMatch = /^\/api\/mcp\/([^/]+)$/.exec(url.pathname)
+  if (mcpMatch) {
+    query.token = decodeURIComponent(mcpMatch[1])
+    req.url = `/api/mcp?${new URLSearchParams(query).toString()}`
+  }
+  const isMcp = url.pathname === '/api/mcp' || !!mcpMatch
+  const vreq = Object.assign(req, { body: raw ? JSON.parse(raw) : undefined, query, cookies: {} })
   const vres = Object.assign(res, {
     status(code: number) {
       res.statusCode = code
@@ -38,5 +49,5 @@ createServer(async (req: IncomingMessage, res: ServerResponse) => {
     },
   })
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await handler(vreq as any, vres as any)
+  await (isMcp ? mcpHandler : handler)(vreq as any, vres as any)
 }).listen(port, () => console.log(`API locale sur http://localhost:${port}/api (base : ${process.env.DATABASE_URL ? 'configurée' : 'absente'})`))

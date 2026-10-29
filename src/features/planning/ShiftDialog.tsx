@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { TimeInput } from '@/components/common/TimeInput'
+import { AnimalAvatar } from '@/components/common/AnimalAvatar'
 import { dayOpening, normalizeRequirements } from '@/domain/requirements'
 import { fmtDuration, toHHMM } from '@/domain/time'
 import { DAY_LABELS, type DayIndex, type Shift, type Week } from '@/domain/types'
@@ -40,8 +41,8 @@ export function ShiftDialog({ week, target, onClose, onSave }: Props) {
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            <span className="mr-2 inline-block size-3 rounded-full align-middle" style={{ background: employee.color }} />
+          <DialogTitle className="flex items-center gap-2">
+            <AnimalAvatar animal={employee.avatar} color={employee.color} size="md" />
             {employee.name} · {DAY_LABELS[target.day]}
           </DialogTitle>
           <DialogDescription>

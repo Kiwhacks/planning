@@ -1,5 +1,6 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { Employee } from '@/domain/types'
+import { AnimalAvatar } from './AnimalAvatar'
 
 interface Props {
   employees: Employee[]
@@ -22,7 +23,7 @@ export function EmployeeSelect({ employees, value, onChange, placeholder = 'Choi
         {allowNone && <SelectItem value={NONE}>— Aucune —</SelectItem>}
         {employees.map((e) => (
           <SelectItem key={e.id} value={e.id}>
-            <span className="inline-block size-2.5 rounded-full" style={{ background: e.color }} />
+            <AnimalAvatar animal={e.avatar} color={e.color} size="xs" />
             {e.name}
           </SelectItem>
         ))}

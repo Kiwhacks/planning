@@ -11,6 +11,18 @@ importers:
       '@fontsource-variable/geist':
         specifier: ^5.3.0
         version: 5.3.0
+      '@modelcontextprotocol/client':
+        specifier: ^2.4.0
+        version: 2.4.0
+      '@modelcontextprotocol/ext-apps':
+        specifier: ^2.0.4
+        version: 2.0.4(@modelcontextprotocol/client@2.4.0)(@modelcontextprotocol/core@2.4.0)(@modelcontextprotocol/server@2.4.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(zod@4.6.7)
+      '@modelcontextprotocol/node':
+        specifier: ^2.1.2
+        version: 2.1.2(@modelcontextprotocol/server@2.4.0)
+      '@modelcontextprotocol/server':
+        specifier: ^2.4.0
+        version: 2.4.0
       '@neondatabase/serverless':
         specifier: ^1.2.0
         version: 1.2.0
@@ -53,6 +65,9 @@ importers:
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
       zustand:
         specifier: ^5.0.16
         version: 5.0.16(@types/react@19.3.0)(react@19.3.1)
@@ -72,6 +87,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.1.2
         version: 6.1.2(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
+      esbuild:
+        specifier: ^0.28.2
+        version: 0.28.2
       oxlint:
         specifier: ^1.89.0
         version: 1.90.0
@@ -586,6 +604,12 @@ packages:
   '@fontsource-variable/geist@5.3.0':
     resolution: {integrity: sha512-j0m+vLQuG5XAYoHtGCVu0spvlGreR3EzpECUVzkFmI1mTVnAO38l/NEPDCFgZ177JxzYJCLSmTQibIiYPilGrA==}
 
+  '@hono/node-server@2.1.5':
+    resolution: {integrity: sha512-MgP/I06GdvsilDspMk/qmRzpk8LOUStP6jFAbSRi40W09DhoyUn+Mj7eyKICPqeYKybOjVFLVIAQzvu1bfIa7Q==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      hono: ^4 || ^5.0.0-0
+
   '@isaacs/fs-minipass@4.0.1':
     resolution: {integrity: sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==}
     engines: {node: '>=18.0.0'}
@@ -611,9 +635,37 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  '@modelcontextprotocol/client@2.4.0':
+    resolution: {integrity: sha512-LgrD2OphHuG12vfKFKz6SOnq7bKHQmhGJIAYdD+MZBn2npHEyry6uD8zvktodtl5CQM85MO0anUyD9JwmUmxww==}
+    engines: {node: '>=20'}
+
   '@modelcontextprotocol/core@2.4.0':
     resolution: {integrity: sha512-z8QBKqdfXLPzkLQuG4xp8hrVEMm1PZ1IgxMN2sMbJiFiAKOWXnAzogXn2W4aqIBlP1ea6U5yiqVquvUNM1Cj6Q==}
     engines: {node: '>=20'}
+
+  '@modelcontextprotocol/ext-apps@2.0.4':
+    resolution: {integrity: sha512-B+PcbuGiaf0e5I3uy4iO5tS3Abo+5w8JvZFzHMzQdq9yVwP836zJkw2+KCGOQ0r4TM1fuQi4JdnbuWjkS4aBvg==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@modelcontextprotocol/client': ^2.0.0
+      '@modelcontextprotocol/core': ^2.0.0
+      '@modelcontextprotocol/server': ^2.0.0
+      react: ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^17.0.0 || ^18.0.0 || ^19.0.0
+      zod: ^4.2.0
+    peerDependenciesMeta:
+      '@modelcontextprotocol/server':
+        optional: true
+      react:
+        optional: true
+      react-dom:
+        optional: true
+
+  '@modelcontextprotocol/node@2.1.2':
+    resolution: {integrity: sha512-IIcIqBpr6NCQQs5DgJTgvbSOAw+3iaR/uquqg+e0nXCdudfjPg/80x0TseUnQx14AUAtE4fsJCEpJKPyb6WPVA==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@modelcontextprotocol/server': ^2.4.0
 
   '@modelcontextprotocol/server@2.4.0':
     resolution: {integrity: sha512-rgR9yxSaAJ+bcsi/XroT/S2AfPiIWloXAnrdfYSCms9ivVju0ishu/wW0J21Ho6+ZOR1r7RyeRbjiRuF87ix5Q==}
@@ -1684,6 +1736,9 @@ packages:
     resolution: {integrity: sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ==}
     engines: {node: '>=18'}
 
+  '@standard-schema/spec@1.1.0':
+    resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
+
   '@tailwindcss/node@4.3.3':
     resolution: {integrity: sha512-/T8IKEsf9VTU6tLjgC7+sv2mOPtQxzE2jMw7u4Tt40Tx+QSZxpzh95/H6cMKoja9XuW7iMdLJYBB0o9G1CaAgg==}
 
@@ -2264,6 +2319,14 @@ packages:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
     engines: {node: '>= 0.6'}
 
+  eventsource-parser@3.1.1:
+    resolution: {integrity: sha512-EKN1vKAMcZ8MlYMpaNuxN6R9yakzH6uajHcHVTqWJzvu5pWw9DyhbP35HH8MVBQ+dZjAfDxk+A8NiR9KWaXiyQ==}
+    engines: {node: '>=18.0.0'}
+
+  eventsource@3.0.7:
+    resolution: {integrity: sha512-CRT1WTyuQoD771GW56XEZFQ/ZoSfWid1alKGDYMmkt2yl8UXrVR4pspqWNEcqKvVIzg6PAltWjxcSSPrboA4iA==}
+    engines: {node: '>=18.0.0'}
+
   execa@5.1.1:
     resolution: {integrity: sha512-8uSpZZocAZRBAPIEINJj3Lo9HyGitllczc27Eh5YYojjMFMn8yHMDMaUHE2Jqfq05D/wucwI4JGURyXt1vchyg==}
     engines: {node: '>=10'}
@@ -2358,6 +2421,10 @@ packages:
 
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
+
+  hono@4.13.14:
+    resolution: {integrity: sha512-yhRLQ21U6qa9Hsu2N7Qcbh8tE+WKEcoErjIo56LeSGiGXGp9sA7UpE86Ui9uexb61KakiGwuHMn2QdV7w6i6kQ==}
+    engines: {node: '>=16.9.0'}
 
   https-proxy-agent@7.0.6:
     resolution: {integrity: sha512-vK9P5/iUfdl95AI+JVyUuIcVtd4ofvtrOr3HNtM2yxC9bnMbEdp3x01OhQNnjb8IJYi38VlTE3mBXwcfvywuSw==}
@@ -2464,6 +2531,9 @@ packages:
   jiti@2.7.0:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
     hasBin: true
+
+  jose@6.2.14:
+    resolution: {integrity: sha512-3JasLuki1NRLQvY4wCoC37KZk4qxoBx2k2aFqLxT84IezqW0bkJKnNtxnZj/Fu1xsQivoc/lytxaRHJoGLjJ1A==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -2866,6 +2936,10 @@ packages:
   picomatch@4.0.7:
     resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==}
     engines: {node: '>=12'}
+
+  pkce-challenge@5.0.1:
+    resolution: {integrity: sha512-wQ0b/W4Fr01qtpHlqSqspcj3EhBvimsdh0KlHhH8HRZnMsEa0ea2fTULOXOS9ccQr3om+GcGRk4e+isrZWV8qQ==}
+    engines: {node: '>=16.20.0'}
 
   pkg-up@3.1.0:
     resolution: {integrity: sha512-nDywThFk1i4BQK4twPQ6TA4RT8bDY96yeuCVBWL3ePARCiEKDRSrNGbFIgUJpLp+XeIR65v8ra7WuJOFUBtkMA==}
@@ -3735,6 +3809,10 @@ snapshots:
 
   '@fontsource-variable/geist@5.3.0': {}
 
+  '@hono/node-server@2.1.5(hono@4.13.14)':
+    dependencies:
+      hono: 4.13.14
+
   '@isaacs/fs-minipass@4.0.1':
     dependencies:
       minipass: 7.1.3
@@ -3771,9 +3849,36 @@ snapshots:
       - encoding
       - supports-color
 
+  '@modelcontextprotocol/client@2.4.0':
+    dependencies:
+      '@modelcontextprotocol/core': 2.4.0
+      cross-spawn: 7.0.6
+      eventsource: 3.0.7
+      eventsource-parser: 3.1.1
+      jose: 6.2.14
+      pkce-challenge: 5.0.1
+      zod: 4.6.7
+
   '@modelcontextprotocol/core@2.4.0':
     dependencies:
       zod: 4.6.7
+
+  '@modelcontextprotocol/ext-apps@2.0.4(@modelcontextprotocol/client@2.4.0)(@modelcontextprotocol/core@2.4.0)(@modelcontextprotocol/server@2.4.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(zod@4.6.7)':
+    dependencies:
+      '@modelcontextprotocol/client': 2.4.0
+      '@modelcontextprotocol/core': 2.4.0
+      '@standard-schema/spec': 1.1.0
+      zod: 4.6.7
+    optionalDependencies:
+      '@modelcontextprotocol/server': 2.4.0
+      react: 19.3.1
+      react-dom: 19.3.1(react@19.3.1)
+
+  '@modelcontextprotocol/node@2.1.2(@modelcontextprotocol/server@2.4.0)':
+    dependencies:
+      '@hono/node-server': 2.1.5(hono@4.13.14)
+      '@modelcontextprotocol/server': 2.4.0
+      hono: 4.13.14
 
   '@modelcontextprotocol/server@2.4.0':
     dependencies:
@@ -4764,6 +4869,8 @@ snapshots:
 
   '@sindresorhus/merge-streams@4.0.0': {}
 
+  '@standard-schema/spec@1.1.0': {}
+
   '@tailwindcss/node@4.3.3':
     dependencies:
       '@jridgewell/remapping': 2.3.5
@@ -5287,6 +5394,12 @@ snapshots:
 
   etag@1.8.1: {}
 
+  eventsource-parser@3.1.1: {}
+
+  eventsource@3.0.7:
+    dependencies:
+      eventsource-parser: 3.1.1
+
   execa@5.1.1:
     dependencies:
       cross-spawn: 7.0.6
@@ -5390,6 +5503,8 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
+  hono@4.13.14: {}
+
   https-proxy-agent@7.0.6:
     dependencies:
       agent-base: 7.1.4
@@ -5454,6 +5569,8 @@ snapshots:
   isexe@3.1.5: {}
 
   jiti@2.7.0: {}
+
+  jose@6.2.14: {}
 
   js-tokens@4.0.0: {}
 
@@ -5800,6 +5917,8 @@ snapshots:
   picomatch@2.3.2: {}
 
   picomatch@4.0.7: {}
+
+  pkce-challenge@5.0.1: {}
 
   pkg-up@3.1.0:
     dependencies:

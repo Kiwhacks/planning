@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { fmtDuration } from '@/domain/time'
 import { DAY_SHORT, type EmployeeWeekStats, type Week } from '@/domain/types'
 import { cn } from '@/lib/utils'
+import { AnimalAvatar } from '@/components/common/AnimalAvatar'
 
 export function SummaryTable({ week, stats }: { week: Week; stats: EmployeeWeekStats[] }) {
   const days = week.config.rules.openDays
@@ -33,8 +34,7 @@ export function SummaryTable({ week, stats }: { week: Week; stats: EmployeeWeekS
               return (
                 <TableRow key={e.id}>
                   <TableCell className="font-medium">
-                    <span className="mr-1.5 inline-block size-2.5 rounded-full align-middle" style={{ background: e.color }} />
-                    {e.name}
+                    <span className="inline-flex items-center gap-1.5"><AnimalAvatar animal={e.avatar} color={e.color} size="xs" />{e.name}</span>
                   </TableCell>
                   {days.map((d) => {
                     const m = s.perDay[d]

@@ -71,6 +71,7 @@ export function HistoryTab({ onOpen }: { onOpen: () => void }) {
           </>
         }
       >
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -113,6 +114,7 @@ export function HistoryTab({ onOpen }: { onOpen: () => void }) {
             {list.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Aucune semaine enregistrée.</TableCell></TableRow>}
           </TableBody>
         </Table>
+        </div>
       </SectionCard>
     </div>
   )

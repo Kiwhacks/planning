@@ -1,4 +1,5 @@
 import { Lock } from 'lucide-react'
+import { AnimalAvatar } from '@/components/common/AnimalAvatar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { dayOpening, normalizeRequirements } from '@/domain/requirements'
 import { SLOT, fmtDuration, toHHMM } from '@/domain/time'
@@ -31,7 +32,7 @@ export function DayBoard({ day, week, coverage, onEdit }: Props) {
   return (
     <Card className="print-break-inside-avoid overflow-hidden">
       <CardHeader className="py-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
           <CardTitle className="text-base">
             {DAY_LABELS[day]} <span className="text-sm font-normal text-muted-foreground">{dayDate(week.monday, day)}</span>
           </CardTitle>
@@ -46,7 +47,77 @@ export function DayBoard({ day, week, coverage, onEdit }: Props) {
         </div>
       </CardHeader>
       <CardContent className="pb-3">
-        <div className="grid grid-cols-[7rem_1fr] gap-x-2 text-xs">
+        {/* Vue compacte (téléphone) */}
+        <div className="sm:hidden">
+          <ul className="divide-y rounded-md border">
+            {employees.map((e) => {
+              const sh = schedule[e.id]?.[day] ?? null
+              const leave = config.leaves.find((l) => l.employeeId === e.id && l.day === day)
+              const pin = config.pins.find((p) => p.employeeId === e.id && p.day === day)
+              const canClick = !leave && !(pin?.mustWork === false)
+              const worked = sh ? sh.end - sh.start - (sh.breakStart != null ? e.breakMinutes : 0) : 0
+              return (
+                <li key={e.id}>
+                  <button
+                    type="button"
+                    disabled={!canClick}
+                    onClick={() => canClick && onEdit(e.id, day, sh)}
+                    className="flex w-full items-center gap-2 px-2 py-2 text-left text-sm disabled:opacity-70"
+                  >
+                    <AnimalAvatar animal={e.avatar} color={e.color} size="sm" />
+                    <span className="w-20 shrink-0 truncate font-medium">{e.name}</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {leave ? (
+                        <span className="text-muted-foreground italic">{leave.label || 'Congé'} ({fmtDuration(leave.minutes)})</span>
+                      ) : pin?.mustWork === false ? (
+                        <span className="text-muted-foreground italic">Ne travaille pas</span>
+                      ) : sh ? (
+                        <>
+                          <span className="tabular-nums">{toHHMM(sh.start)}–{toHHMM(sh.end)}</span>
+                          <span className="text-muted-foreground"> · {fmtDuration(worked)}</span>
+                          {sh.breakStart != null && e.breakMinutes > 0 && <span className="text-muted-foreground"> · pause {toHHMM(sh.breakStart)}</span>}
+                          {isCleaner(e.id) && cleanStart != null && sh.end > cleanStart && <span className="text-violet-700"> · ménage</span>}
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </span>
+                    {sh?.locked && <Lock className="size-3.5 shrink-0 text-muted-foreground" />}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+          <div className="mt-2 flex h-3 overflow-hidden rounded">
+            {coverage?.slots.map((s) => {
+              const status = s.cleaning ? 'cleaning' : s.required === 0 ? (s.present > 0 ? 'outside' : 'closed') : s.problem ? 'under' : s.present > s.required ? 'over' : 'ok'
+              return (
+                <div
+                  key={s.time}
+                  className={cn(
+                    'flex-1',
+                    status === 'ok' && 'bg-green-300',
+                    status === 'under' && 'bg-red-400',
+                    status === 'over' && 'bg-sky-300',
+                    status === 'outside' && 'bg-amber-300',
+                    status === 'cleaning' && 'bg-violet-300',
+                    status === 'closed' && 'bg-muted/40',
+                  )}
+                  title={`${toHHMM(s.time)} : ${s.present} présente${s.present > 1 ? 's' : ''} / besoin ${s.required}`}
+                />
+              )
+            })}
+          </div>
+          <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+            <span>{toHHMM(rules.dayStart)}</span>
+            <span>couverture : vert = ok · rouge = manque · bleu = surplus · violet = ménage</span>
+            <span>{toHHMM(rules.dayEnd)}</span>
+          </div>
+        </div>
+
+        {/* Vue graphique (tablette et ordinateur) */}
+        <div className="hidden overflow-x-auto sm:block">
+        <div className="grid min-w-[560px] grid-cols-[7.5rem_1fr] gap-x-2 text-xs">
           {/* Axe des heures */}
           <div />
           <div className="relative h-5">
@@ -92,7 +163,7 @@ export function DayBoard({ day, week, coverage, onEdit }: Props) {
             return (
               <div key={e.id} className="contents">
                 <div className="flex items-center gap-1.5 truncate py-0.5">
-                  <span className="size-2.5 shrink-0 rounded-full" style={{ background: e.color }} />
+                  <AnimalAvatar animal={e.avatar} color={e.color} size="xs" />
                   <span className="truncate font-medium" title={e.name}>{e.name}</span>
                 </div>
                 <div
@@ -173,6 +244,7 @@ export function DayBoard({ day, week, coverage, onEdit }: Props) {
               )
             })}
           </div>
+        </div>
         </div>
       </CardContent>
     </Card>

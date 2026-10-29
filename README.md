@@ -62,6 +62,26 @@ API_PORT=3001 pnpm dev
 
 Le code d'accès est mémorisé dans le navigateur après la première saisie. Pour le changer, modifier `APP_PASSWORD` dans Vercel et redéployer.
 
+## Utilisation depuis une IA (connexion MCP)
+
+L'application expose un serveur MCP (Streamable HTTP) à l'adresse :
+
+```
+https://<votre-domaine>/api/mcp/<MCP_TOKEN>
+```
+
+`MCP_TOKEN` est une variable d'environnement Vercel (à défaut, `APP_PASSWORD` est utilisé). Le jeton peut aussi être passé par l'en-tête `x-app-key` ou `Authorization: Bearer`.
+
+- **Claude** (claude.ai) : Paramètres → Connecteurs → Ajouter un connecteur personnalisé → coller l'URL ci-dessus (sans authentification OAuth : le jeton est dans l'URL).
+- **ChatGPT** : Paramètres → Connecteurs (mode développeur) → Créer → coller l'URL.
+- **Claude Code / autres clients** : transport `http` avec la même URL.
+
+Outils disponibles : `list_weeks`, `get_week`, `generate_week`, `create_week`, `set_shift`, `remove_shift`, `set_leave`, `set_constraint`, `set_cleaning`, `set_requirements`, `set_week_status`, `get_team`. Les réponses contiennent un rendu Markdown (tableaux) et, dans les clients compatibles **MCP Apps** (Claude, ChatGPT…), une vue graphique interactive du planning (`ui://planning-creche/week.html`, construite depuis `src/mcp-ui/` par `pnpm build:mcp-ui`).
+
+Exemples de demandes : « Affiche le planning de cette semaine », « Lucie est en congé lundi, régénère le planning », « Fanny ouvre à 6h45 mardi », « Affecte Isabelle au ménage du jeudi ».
+
+Test local : `pnpm dev:api` puis `pnpm mcp:test` (nécessite `.env`).
+
 Scripts utiles pour le solveur : `pnpm dlx tsx scripts/try-example.ts` (planning de l'exemple) et `pnpm dlx tsx scripts/bench.ts` (robustesse sur plusieurs graines).
 
 ## Structure

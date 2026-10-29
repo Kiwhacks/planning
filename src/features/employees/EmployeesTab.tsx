@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DayPicker } from '@/components/common/DayPicker'
+import { AnimalAvatar, AnimalPicker } from '@/components/common/AnimalAvatar'
 import { DurationInput } from '@/components/common/DurationInput'
 import { SectionCard } from '@/components/common/SectionCard'
 import { EMPLOYEE_COLORS, makeEmployee } from '@/domain/defaults'
@@ -37,8 +38,9 @@ export function EmployeesTab({ week }: { week: Week }) {
       <SectionCard
         title="Équipe"
         description="Contrats, jours travaillés, pauses et règles individuelles."
-        actions={<Button size="sm" onClick={() => setEditing(makeEmployee({ name: '' }, rules, employees.length))}><Plus /> Ajouter une personne</Button>}
+        actions={<Button size="sm" onClick={() => setEditing(makeEmployee({ name: '' }, rules, employees.length, employees))}><Plus /> Ajouter une personne</Button>}
       >
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -56,9 +58,8 @@ export function EmployeesTab({ week }: { week: Week }) {
             {employees.map((e) => (
               <TableRow key={e.id} className={!e.active ? 'opacity-50' : undefined}>
                 <TableCell className="font-medium">
-                  <span className="mr-1.5 inline-block size-2.5 rounded-full align-middle" style={{ background: e.color }} />
-                  {e.name}
-                  {!e.active && <Badge variant="outline" className="ml-2">inactif</Badge>}
+                  <span className="inline-flex items-center gap-2"><AnimalAvatar animal={e.avatar} color={e.color} size="md" />{e.name}</span>
+                  {!e.active && <Badge variant="outline" className="ml-2">inactive</Badge>}
                 </TableCell>
                 <TableCell>{ROLE_LABELS[e.role]}</TableCell>
                 <TableCell className="text-right tabular-nums">{fmtDuration(e.weeklyMinutes)}</TableCell>
@@ -92,6 +93,7 @@ export function EmployeesTab({ week }: { week: Week }) {
             )}
           </TableBody>
         </Table>
+        </div>
       </SectionCard>
 
       {editing && <EmployeeDialog employee={editing} week={week} onClose={() => setEditing(null)} onSave={save} />}
@@ -112,11 +114,18 @@ function EmployeeDialog({ employee, week, onClose, onSave }: { employee: Employe
           <DialogDescription>Les durées se saisissent au format « 33h30 ».</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
-          <div className="grid grid-cols-[1fr_auto] gap-3">
+          <div className="grid grid-cols-[auto_1fr] gap-3">
+            <AnimalAvatar animal={e.avatar} color={e.color} size="lg" className="mt-5" />
             <div className="space-y-1">
               <Label>Prénom / nom</Label>
               <Input value={e.name} onChange={(ev) => set('name', ev.target.value)} autoFocus />
             </div>
+          </div>
+          <div className="space-y-1">
+            <Label>Animal</Label>
+            <AnimalPicker kind="adult" value={e.avatar} onChange={(k) => set('avatar', k)} taken={week.config.employees.filter((x) => x.id !== e.id).map((x) => x.avatar)} />
+          </div>
+          <div className="grid grid-cols-[1fr_auto] gap-3">
             <div className="space-y-1">
               <Label>Couleur</Label>
               <div className="flex gap-1">

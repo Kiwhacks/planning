@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Planning crèche</title>
+<style>
+  :root { color-scheme: light dark; --bg: #fff; --fg: #111827; --muted: #6b7280; --line: #e5e7eb; --card: #fafafa; --ok: #15803d; --okbg: #dcfce7; --err: #b91c1c; --errbg: #fee2e2; --warn: #b45309; --warnbg: #fef3c7; --cleanbg: #ede9fe; --clean: #6d28d9; --reqbg: rgba(0,0,0,.08); --over: #bae6fd; --okcov: #bbf7d0; --undercov: #fca5a5; --outcov: #fde68a; }
+  :root[data-theme="dark"] { --bg: #0f1115; --fg: #e5e7eb; --muted: #9ca3af; --line: #2a2f3a; --card: #161a22; --okbg: #14532d; --ok: #86efac; --errbg: #7f1d1d; --err: #fca5a5; --warnbg: #78350f; --warn: #fcd34d; --cleanbg: #3b2a6b; --clean: #c4b5fd; --reqbg: rgba(255,255,255,.12); --over: #0c4a6e; --okcov: #166534; --undercov: #991b1b; --outcov: #92400e; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--fg); background: var(--bg); padding: 10px; }
+  h2 { font-size: 15px; margin: 0; } h3 { font-size: 13px; margin: 0; } h3 small { font-weight: 400; color: var(--muted); }
+  .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+  .top > div { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--line); } .badge.validated { background: var(--okbg); color: var(--ok); }
+  .pills { gap: 6px; } .pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--line); text-decoration: none; color: inherit; }
+  .pill.ok { background: var(--okbg); color: var(--ok); } .pill.err { background: var(--errbg); color: var(--err); } .pill.warn { background: var(--warnbg); color: var(--warn); } .pill.link { border: 1px solid var(--line); cursor: pointer; }
+  .day { border: 1px solid var(--line); border-radius: 10px; background: var(--card); padding: 8px 10px; margin-bottom: 10px; }
+  .day > header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; } .day > header small { color: var(--muted); }
+  .grid { display: grid; grid-template-columns: 6rem 1fr; gap: 3px 6px; align-items: center; }
+  .name { display: flex; align-items: center; gap: 5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .name i, td i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; flex: none; }
+  .muted { color: var(--muted); font-weight: 400; }
+  .av { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; flex: none; margin-right: 5px; vertical-align: middle; background: #fff; } .av svg { width: 15px; height: 15px; display: block; }
+  .axis { position: relative; height: 14px; } .axis span { position: absolute; transform: translateX(-50%); font-size: 10px; color: var(--muted); }
+  .track { position: relative; height: 24px; } .track b { position: absolute; top: 0; bottom: 0; border-left: 1px solid var(--line); }
+  .reqs { background: var(--reqbg); border-radius: 4px; height: 20px; } .req { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; border-right: 1px solid var(--bg); background: var(--reqbg); } .req.clean { background: var(--cleanbg); color: var(--clean); font-weight: 500; }
+  .bar { position: absolute; top: 2px; bottom: 2px; border-radius: 5px; color: #fff; font-size: 11px; display: flex; align-items: center; padding: 0 6px; overflow: hidden; white-space: nowrap; } .bar span { position: relative; z-index: 2; text-shadow: 0 1px 1px rgba(0,0,0,.3); } .bar em { font-style: normal; opacity: .85; }
+  .brk { position: absolute; top: 0; bottom: 0; background: rgba(255,255,255,.65); background-image: repeating-linear-gradient(135deg, rgba(0,0,0,.18) 0 3px, transparent 3px 7px); }
+  .cln { position: absolute; top: 0; bottom: 0; background: rgba(60,20,120,.4); background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.35) 0 2px, transparent 2px 6px); }
+  .note { position: absolute; inset: 0; display: flex; align-items: center; padding-left: 6px; font-style: italic; color: var(--muted); }
+  .txt { display: none; }
+  .covs { display: flex; height: 10px; border-radius: 4px; overflow: hidden; } .cv { flex: 1; } .cv.k { background: var(--okcov); } .cv.u { background: var(--undercov); } .cv.p { background: var(--over); } .cv.o { background: var(--outcov); } .cv.c { background: var(--cleanbg); } .cv.z { background: var(--line); }
+  table { border-collapse: collapse; width: 100%; } th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line); } th { color: var(--muted); font-weight: 500; font-size: 11px; } td:not(:first-child), th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+  .err { color: var(--err); } .warn { color: var(--warn); } .ok { color: var(--ok); }
+  ul { margin: 0; padding-left: 18px; } li { margin: 2px 0; }
+  @media (max-width: 480px) { .grid { display: block; } .axis, .reqs, .track, .covs, .hd, .name.muted { display: none; } .name { margin-top: 4px; } .txt { display: block; margin: 0 0 4px; padding-left: 27px; color: var(--muted); } }
+</style>
+</head>
+<body><div id="root"><p style="color:#6b7280">Chargement du planning…</p></div><script>/*__ANIMALS__*/</script><script>/*__SCRIPT__*/</script></body>
+</html>

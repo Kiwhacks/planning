@@ -124,23 +124,23 @@ function WeekPlanning({ weekId, onGoTo }: { weekId: string; onGoTo: (tab: string
     <div className="space-y-4">
       <div className="no-print flex flex-wrap items-center gap-2">
         <Button onClick={() => generate(true)} disabled={solver.running || activeEmployees.length === 0}>
-          {solver.running ? <Loader2 className="animate-spin" /> : <Sparkles />} Générer le planning
+          {solver.running ? <Loader2 className="animate-spin" /> : <Sparkles />} Générer<span className="hidden sm:inline"> le planning</span>
         </Button>
         <Button variant="outline" onClick={() => generate(false)} disabled={solver.running || !hasSchedule}>
-          <Wand2 /> Améliorer l’existant
+          <Wand2 /> Améliorer<span className="hidden sm:inline"> l’existant</span>
         </Button>
-        <Button variant="ghost" onClick={() => clearSchedule(weekId, true)} disabled={solver.running || !hasSchedule}>
-          <Eraser /> Effacer (garde les créneaux verrouillés)
+        <Button variant="ghost" onClick={() => clearSchedule(weekId, true)} disabled={solver.running || !hasSchedule} title="Efface le planning en gardant les créneaux verrouillés">
+          <Eraser /> Effacer<span className="hidden lg:inline"> (garde les créneaux verrouillés)</span>
         </Button>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:ml-auto">
           {week.status === 'validated' ? (
             <Button variant="secondary" onClick={() => setStatus(weekId, 'draft')}>Repasser en brouillon</Button>
           ) : (
             <Button variant="secondary" onClick={() => setStatus(weekId, 'validated')} disabled={!hasSchedule}>
-              <CheckCircle2 /> Valider la semaine
+              <CheckCircle2 /> Valider<span className="hidden sm:inline"> la semaine</span>
             </Button>
           )}
-          <Button variant="outline" onClick={() => window.print()} disabled={!hasSchedule}><Printer /> Imprimer</Button>
+          <Button variant="outline" className="hidden sm:inline-flex" onClick={() => window.print()} disabled={!hasSchedule}><Printer /> Imprimer</Button>
         </div>
       </div>
 
@@ -198,7 +198,7 @@ function WeekPlanning({ weekId, onGoTo }: { weekId: string; onGoTo: (tab: string
         </div>
       )}
 
-      <div className="grid gap-4">
+      <div className="grid min-w-0 gap-4">
         {config.rules.openDays.map((d) => (
           <DayBoard
             key={d}
@@ -211,10 +211,10 @@ function WeekPlanning({ weekId, onGoTo }: { weekId: string; onGoTo: (tab: string
       </div>
 
       <div className="grid gap-4 lg:grid-cols-5">
-        <div className="lg:col-span-3">
+        <div className="min-w-0 lg:col-span-3">
           <SummaryTable week={week} stats={evaluation.stats} />
         </div>
-        <div className="space-y-4 lg:col-span-2">
+        <div className="min-w-0 space-y-4 lg:col-span-2">
           <Diagnostics violations={evaluation.violations} />
           <Suggestions suggestions={suggestions} onApply={applySuggestion} />
         </div>

@@ -6,6 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { EmployeeSelect } from '@/components/common/EmployeeSelect'
 import { SectionCard } from '@/components/common/SectionCard'
 import { TimeInput } from '@/components/common/TimeInput'
+import { AnimalAvatar, AnimalPicker } from '@/components/common/AnimalAvatar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { makeChild } from '@/domain/defaults'
 import { h } from '@/domain/time'
 import { DAY_SHORT, type Week } from '@/domain/types'
@@ -24,7 +26,7 @@ export function ChildrenTab({ week }: { week: Week }) {
       <SectionCard
         title="Enfants, référentes et relais"
         description="Les présences servent à calculer les besoins en personnel (onglet Semaine → « Calculer depuis les enfants ») et le planning favorise la présence de la référente, sinon de la relais, pendant la présence de l'enfant."
-        actions={<Button size="sm" onClick={() => update(week.id, (c) => { c.children.push(makeChild({ name: '' })) })}><Plus /> Ajouter un enfant</Button>}
+        actions={<Button size="sm" onClick={() => update(week.id, (c) => { c.children.push(makeChild({ name: '' }, c.children)) })}><Plus /> Ajouter un enfant</Button>}
       >
         <div className="overflow-x-auto">
           <Table>
@@ -41,7 +43,20 @@ export function ChildrenTab({ week }: { week: Week }) {
               {children.map((ch) => (
                 <TableRow key={ch.id}>
                   <TableCell>
-                    <Input value={ch.name} placeholder="Prénom" onChange={(e) => update(week.id, (c) => { c.children.find((x) => x.id === ch.id)!.name = e.target.value })} />
+                    <div className="flex items-center gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button type="button" className="rounded-full transition-transform hover:scale-110" title="Choisir un animal">
+                            <AnimalAvatar animal={ch.avatar} color="#f59e0b" size="md" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80">
+                          <p className="mb-2 text-xs text-muted-foreground">Bébé animal de {ch.name || 'l’enfant'}</p>
+                          <AnimalPicker kind="baby" value={ch.avatar} onChange={(k) => update(week.id, (c) => { c.children.find((x) => x.id === ch.id)!.avatar = k })} taken={children.filter((x) => x.id !== ch.id).map((x) => x.avatar)} />
+                        </PopoverContent>
+                      </Popover>
+                      <Input value={ch.name} placeholder="Prénom" onChange={(e) => update(week.id, (c) => { c.children.find((x) => x.id === ch.id)!.name = e.target.value })} />
+                    </div>
                   </TableCell>
                   <TableCell>
                     <EmployeeSelect employees={active} value={ch.referentId} allowNone onChange={(id) => update(week.id, (c) => { c.children.find((x) => x.id === ch.id)!.referentId = id })} />

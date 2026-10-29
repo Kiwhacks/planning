@@ -17,6 +17,8 @@ export interface Employee {
   id: string
   name: string
   color: string
+  /** Animal (adulte) illustrant la personne, clé de ADULT_ANIMALS. */
+  avatar?: string
   role: StaffRole
   /** Heures hebdomadaires contractuelles, en minutes (33h30 = 2010). */
   weeklyMinutes: number
@@ -46,6 +48,8 @@ export interface TimeRange {
 export interface Child {
   id: string
   name: string
+  /** Bébé animal illustrant l'enfant, clé de BABY_ANIMALS. */
+  avatar?: string
   referentId: string | null
   relaisId: string | null
   /** Présence par jour (null = absent). */
