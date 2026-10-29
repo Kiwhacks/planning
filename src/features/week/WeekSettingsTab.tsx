@@ -1,4 +1,4 @@
-import { Copy, Plus, Trash2, Wand2 } from 'lucide-react'
+import { Copy, Plus, Sparkles, Trash2, Wand2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,10 +10,11 @@ import { EmployeeSelect } from '@/components/common/EmployeeSelect'
 import { SectionCard } from '@/components/common/SectionCard'
 import { TimeInput } from '@/components/common/TimeInput'
 import { newId } from '@/domain/defaults'
-import { normalizeRequirements, requiredMinutes, requirementsFromChildren } from '@/domain/requirements'
-import { fmtDuration, h } from '@/domain/time'
+import { dayOpening, normalizeRequirements, requiredMinutes, requirementsFromChildren } from '@/domain/requirements'
+import { fmtDuration, h, toHHMM } from '@/domain/time'
 import { DAY_LABELS, type DayIndex, type Leave, type Pin, type Week } from '@/domain/types'
 import { useStore } from '@/store/useStore'
+import { cn } from '@/lib/utils'
 import { TemplateBanner } from './TemplateBanner'
 
 export function WeekSettingsTab({ week }: { week: Week }) {
@@ -75,6 +76,7 @@ export function WeekSettingsTab({ week }: { week: Week }) {
                   ))}
                   {reqs.length === 0 && <p className="text-xs text-muted-foreground italic">Aucun besoin : la structure est considérée fermée ce jour.</p>}
                 </div>
+                <CleaningEditor week={week} day={d} />
                 <div className="mt-2 flex gap-1">
                   <Button
                     size="sm"
@@ -217,5 +219,49 @@ function DaySelect({ value, days, onChange }: { value: DayIndex; days: DayIndex[
         {days.map((d) => <SelectItem key={d} value={String(d)}>{DAY_LABELS[d]}</SelectItem>)}
       </SelectContent>
     </Select>
+  )
+}
+
+function CleaningEditor({ week, day }: { week: Week; day: DayIndex }) {
+  const update = useStore((s) => s.updateWeekConfig)
+  const { config } = week
+  const cl = config.cleaning?.[day] ?? { minutes: config.rules.defaultCleaningMinutes, employeeIds: [] }
+  const close = dayOpening(normalizeRequirements(config.requirements[day] ?? []))?.close
+  const candidates = config.employees.filter((e) => e.active && e.workDays.includes(day) && !config.leaves.some((l) => l.employeeId === e.id && l.day === day))
+  const setCl = (fn: (c: { minutes: number; employeeIds: string[] }) => void) =>
+    update(week.id, (c) => {
+      c.cleaning ??= {}
+      const cur = (c.cleaning[day] ??= { minutes: c.rules.defaultCleaningMinutes, employeeIds: [] })
+      fn(cur)
+    })
+  return (
+    <div className="mt-3 rounded-md bg-violet-50 p-2 text-xs dark:bg-violet-950/30">
+      <div className="flex flex-wrap items-center gap-2">
+        <Sparkles className="size-3.5 text-violet-700" />
+        <span className="font-medium">Ménage</span>
+        <DurationInput className="h-7 w-20" value={cl.minutes} onChange={(m) => m != null && setCl((c) => { c.minutes = m })} />
+        <span className="text-muted-foreground">{close != null && cl.minutes > 0 ? `après ${toHHMM(close)} (jusqu’à ${toHHMM(close + cl.minutes)})` : 'après le départ du dernier enfant'}</span>
+      </div>
+      {cl.minutes > 0 && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-1">
+          <span className="mr-1 text-muted-foreground">Qui :</span>
+          {candidates.map((e) => {
+            const on = cl.employeeIds.includes(e.id)
+            return (
+              <button
+                key={e.id}
+                type="button"
+                className={cn('rounded-full border px-2 py-0.5 transition-colors', on ? 'border-transparent text-white' : 'border-border bg-background text-muted-foreground hover:bg-muted')}
+                style={on ? { background: e.color } : undefined}
+                onClick={() => setCl((c) => { c.employeeIds = on ? c.employeeIds.filter((x) => x !== e.id) : [...c.employeeIds, e.id] })}
+              >
+                {e.name}
+              </button>
+            )
+          })}
+          {candidates.length === 0 && <span className="text-muted-foreground italic">personne de disponible ce jour</span>}
+        </div>
+      )}
+    </div>
   )
 }

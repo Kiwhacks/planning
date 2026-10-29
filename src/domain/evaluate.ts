@@ -50,10 +50,19 @@ export function dayCost(model: Model, shifts: Shifts, d: number, sc: Scratch): n
   fillPresence(model, shifts, d, sc)
   const { S, W, minPros } = model
   const req = model.req[d]
+  const close = model.closeSlot[d]
+  const cleanEnd = model.cleanEnd[d]
   let cost = 0
   for (let t = 0; t < S; t++) {
     const r = req[t]
     const p = sc.present[t]
+    if (r === 0 && t >= close && t < cleanEnd) {
+      // créneau de ménage : seules les personnes affectées sont attendues
+      for (let i = 0; i < model.employees.length; i++) {
+        if (sc.by[i * S + t] && !model.employees[i].cleans[d]) cost += W.OUTSIDE
+      }
+      continue
+    }
     if (r > 0) {
       if (p < r) cost += W.UNDER * (r - p)
       else if (p > r) cost += W.OVER * (p - r)
@@ -180,31 +189,39 @@ export function evaluate(model: Model, shifts: Shifts): Evaluation {
     let presentMinutes = 0
     let missing = 0
     let extra = 0
+    const close = model.closeSlot[d]
+    const cleanEnd = model.cleanEnd[d]
     for (let t = 0; t < S; t++) {
       const r = req[t]
       const p = sc.present[t]
-      slots.push({ time: model.dayStart + t * SLOT, required: r, present: p, pros: sc.pros[t] })
-      requiredMinutes += r * SLOT
-      presentMinutes += p * SLOT
+      const isCleaning = r === 0 && t >= close && t < cleanEnd
+      let nonCleaners = 0
+      if (isCleaning) for (let i = 0; i < model.employees.length; i++) if (sc.by[i * S + t] && !model.employees[i].cleans[d]) nonCleaners++
       under[t] = r > 0 && p < r
       over[t] = r > 0 && p > r
-      outside[t] = r === 0 && p > 0
+      outside[t] = isCleaning ? nonCleaners > 0 : r === 0 && p > 0
       if (r > 0 && p < r) missing += (r - p) * SLOT
       if (r > 0 && p > r) extra += (p - r) * SLOT
       noPro[t] = (r >= 2 && sc.pros[t] < Math.min(r, minPros)) || (r === 1 && p >= 1 && sc.pros[t] === 0)
-      alone[t] = p === 1 && !model.employees[sc.last[t]].canBeAlone
+      alone[t] = !isCleaning && p === 1 && !model.employees[sc.last[t]].canBeAlone
+      requiredMinutes += (isCleaning ? model.cleanerCount[d] : r) * SLOT
+      presentMinutes += p * SLOT
+      slots.push({ time: model.dayStart + t * SLOT, required: r, present: p, pros: sc.pros[t], cleaning: isCleaning, problem: under[t] || noPro[t] || alone[t] })
     }
     const dl = DAY_LABELS[d]
+    if (close >= 0 && model.cleanMinutes[d] > 0 && model.cleanerCount[d] === 0) {
+      violations.push({ severity: 'warning', day: d, employeeId: null, message: `${dl} : personne n'est affectée au ménage (${fmtDuration(model.cleanMinutes[d])} après ${time(close)}).` })
+    }
     for (const [a, b] of ranges(under)) {
       const maxMissing = Math.max(...slots.slice(a, b).map((s) => s.required - s.present))
       violations.push({ severity: 'error', day: d, employeeId: null, message: `${dl} ${time(a)}–${time(b)} : il manque ${maxMissing} personne${maxMissing > 1 ? 's' : ''}.` })
     }
     for (const [a, b] of ranges(noPro)) {
-      violations.push({ severity: 'error', day: d, employeeId: null, message: `${dl} ${time(a)}–${time(b)} : pas assez de professionnel·les (apprenti·es / stagiaires non comptés).` })
+      violations.push({ severity: 'error', day: d, employeeId: null, message: `${dl} ${time(a)}–${time(b)} : pas assez de professionnelles (apprenties / stagiaires non comptés).` })
     }
     for (const [a, b] of ranges(alone)) {
       const who = model.employees[sc.last[a]].name
-      violations.push({ severity: 'error', day: d, employeeId: model.employees[sc.last[a]].id, message: `${dl} ${time(a)}–${time(b)} : ${who} est seul·e alors qu'elle/il ne peut pas ouvrir ou fermer seul·e.` })
+      violations.push({ severity: 'error', day: d, employeeId: model.employees[sc.last[a]].id, message: `${dl} ${time(a)}–${time(b)} : ${who} est seule alors qu'elle ne peut pas ouvrir ou fermer seule.` })
     }
     for (const [a, b] of ranges(outside)) {
       violations.push({ severity: 'warning', day: d, employeeId: null, message: `${dl} ${time(a)}–${time(b)} : présence en dehors des horaires de besoin.` })
@@ -215,7 +232,7 @@ export function evaluate(model: Model, shifts: Shifts): Evaluation {
         violations.push({ severity: 'info', day: d, employeeId: null, message: `${dl} ${time(a)}–${time(b)} : ${maxExtra} personne${maxExtra > 1 ? 's' : ''} de plus que le besoin.` })
       }
     }
-    // référent·es / relais
+    // référentes / relais
     for (const c of model.children) {
       const pr = c.present[d]
       const none: boolean[] = []
@@ -224,7 +241,7 @@ export function evaluate(model: Model, shifts: Shifts): Evaluation {
       }
       for (const [a, b] of ranges(none)) {
         if ((b - a) * SLOT >= 30)
-          violations.push({ severity: 'info', day: d, employeeId: null, message: `${dl} ${time(a)}–${time(b)} : ni référent·e ni relais présent·e pour ${c.name}.` })
+          violations.push({ severity: 'info', day: d, employeeId: null, message: `${dl} ${time(a)}–${time(b)} : ni référente ni relais présente pour ${c.name}.` })
       }
     }
     coverage.push({ day: d, slots, requiredMinutes, presentMinutes, missingMinutes: missing, extraMinutes: extra })
@@ -242,19 +259,19 @@ export function evaluate(model: Model, shifts: Shifts): Evaluation {
         perDay[d as DayIndex] = w
         worked += w
         const amp = (sh.e - sh.s) * SLOT
-        if (!emp.canWork[d]) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: `${dl} : ${emp.name} est planifié·e un jour non travaillé / en congé.` })
+        if (!emp.canWork[d]) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: `${dl} : ${emp.name} est planifiée un jour non travaillé ou en congé.` })
         if (emp.fixedDaily >= 0 && w !== emp.fixedDaily * SLOT) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: `${dl} : ${emp.name} doit faire exactement ${fmtDuration(emp.fixedDaily * SLOT)} (planifié ${fmtDuration(w)}).` })
         if (w > emp.maxDaily * SLOT) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: `${dl} : ${emp.name} dépasse le maximum journalier (${fmtDuration(w)} > ${fmtDuration(emp.maxDaily * SLOT)}).` })
         if (amp > emp.maxAmp * SLOT) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: `${dl} : amplitude de ${emp.name} trop grande (${fmtDuration(amp)} > ${fmtDuration(emp.maxAmp * SLOT)}).` })
         if (emp.fixedDaily < 0 && w < emp.minDaily * SLOT) violations.push({ severity: 'warning', day: d as DayIndex, employeeId: emp.id, message: `${dl} : journée très courte pour ${emp.name} (${fmtDuration(w)}).` })
         if (emp.pinStart[d] >= 0 && sh.s !== emp.pinStart[d]) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: `${dl} : ${emp.name} devrait commencer à ${time(emp.pinStart[d])} (planifié ${time(sh.s)}).` })
-        if (emp.pinEnd[d] >= 0 && sh.e !== emp.pinEnd[d]) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: `${dl} : ${emp.name} devrait finir à ${time(emp.pinEnd[d])} (planifié ${time(sh.e)}).` })
+        if (emp.pinEnd[d] >= 0 && sh.e !== emp.pinEnd[d]) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: emp.cleans[d] ? `${dl} : ${emp.name} est affectée au ménage et devrait finir à ${time(emp.pinEnd[d])} (planifié ${time(sh.e)}).` : `${dl} : ${emp.name} devrait finir à ${time(emp.pinEnd[d])} (planifié ${time(sh.e)}).` })
         if (breakRequired(emp, sh)) {
           if (sh.b < 0 || sh.b <= sh.s || sh.b + emp.breakSlots >= sh.e) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: `${dl} : pause manquante ou mal placée pour ${emp.name}.` })
           else if (sh.b < model.breakWinStart || sh.b + emp.breakSlots > model.breakWinEnd) violations.push({ severity: 'info', day: d as DayIndex, employeeId: emp.id, message: `${dl} : pause de ${emp.name} à ${time(sh.b)}, hors de la fenêtre habituelle.` })
         }
       } else if (emp.mustWork[d]) {
-        violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: `${dl} : ${emp.name} devrait travailler (contrainte fixe) mais n'est pas planifié·e.` })
+        violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: emp.cleans[d] ? `${dl} : ${emp.name} est affectée au ménage mais n'est pas planifiée.` : `${dl} : ${emp.name} devrait travailler (contrainte fixe) mais n'est pas planifiée.` })
       }
       leave += emp.leaveSlots[d] * SLOT
     }

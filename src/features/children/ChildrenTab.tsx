@@ -22,8 +22,8 @@ export function ChildrenTab({ week }: { week: Week }) {
     <div className="space-y-4">
       <TemplateBanner week={week} what="Enfants" />
       <SectionCard
-        title="Enfants, référent·es et relais"
-        description="Les présences servent à calculer les besoins en personnel (onglet Semaine → « Calculer depuis les enfants ») et le planning favorise la présence du ou de la référent·e, sinon du relais, pendant la présence de l'enfant."
+        title="Enfants, référentes et relais"
+        description="Les présences servent à calculer les besoins en personnel (onglet Semaine → « Calculer depuis les enfants ») et le planning favorise la présence de la référente, sinon de la relais, pendant la présence de l'enfant."
         actions={<Button size="sm" onClick={() => update(week.id, (c) => { c.children.push(makeChild({ name: '' })) })}><Plus /> Ajouter un enfant</Button>}
       >
         <div className="overflow-x-auto">
@@ -31,7 +31,7 @@ export function ChildrenTab({ week }: { week: Week }) {
             <TableHeader>
               <TableRow>
                 <TableHead className="min-w-32">Enfant</TableHead>
-                <TableHead className="min-w-36">Référent·e</TableHead>
+                <TableHead className="min-w-36">Référente</TableHead>
                 <TableHead className="min-w-36">Relais</TableHead>
                 {days.map((d) => <TableHead key={d} className="min-w-44">{DAY_SHORT[d]}</TableHead>)}
                 <TableHead />

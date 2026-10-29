@@ -1,5 +1,5 @@
 import { h } from './time'
-import type { Child, Employee, Leave, Pin, Requirement, Rules, TemplateConfig, WeekConfig, DayIndex } from './types'
+import type { Child, CleaningDay, Employee, Leave, Pin, Requirement, Rules, TemplateConfig, WeekConfig, DayIndex } from './types'
 
 export const EMPLOYEE_COLORS = [
   '#2563eb', '#db2777', '#16a34a', '#ea580c', '#7c3aed', '#0891b2', '#ca8a04', '#dc2626', '#4f46e5', '#059669',
@@ -28,6 +28,13 @@ export const DEFAULT_RULES: Rules = {
   defaultBreakMinutes: 45,
   overtimeStrictness: 2,
   referentImportance: 1,
+  defaultCleaningMinutes: 30,
+}
+
+export function defaultCleaning(rules: Rules): Partial<Record<DayIndex, CleaningDay>> {
+  const out: Partial<Record<DayIndex, CleaningDay>> = {}
+  for (const d of rules.openDays) out[d] = { minutes: rules.defaultCleaningMinutes, employeeIds: [] }
+  return out
 }
 
 export function makeEmployee(partial: Partial<Employee> & { name: string }, rules: Rules, index = 0): Employee {
@@ -81,7 +88,7 @@ export function buildExampleTemplate(): TemplateConfig {
     makeEmployee({ id: 'emp_fanny', name: 'Fanny', weeklyMinutes: h(33, 30) }, rules, 3),
     makeEmployee({ id: 'emp_lucie', name: 'Lucie', weeklyMinutes: h(33, 30) }, rules, 4),
   ]
-  return { employees, children: [], rules, requirements: structuredClone(EXAMPLE_REQUIREMENTS) }
+  return { employees, children: [], rules, requirements: structuredClone(EXAMPLE_REQUIREMENTS), cleaning: defaultCleaning(rules) }
 }
 
 /** Spécificités de la semaine d'exemple (congés et contraintes fixes). */
@@ -106,5 +113,17 @@ export function buildExampleWeekExtras(): { leaves: Leave[]; pins: Pin[] } {
 }
 
 export function weekConfigFromTemplate(t: TemplateConfig): WeekConfig {
-  return { ...structuredClone(t), leaves: [], pins: [], notes: '' }
+  return { ...structuredClone(migrateTemplate(t)), leaves: [], pins: [], notes: '' }
+}
+
+/** Complète les données enregistrées par d'anciennes versions de l'application. */
+export function migrateTemplate<T extends TemplateConfig>(t: T): T {
+  const rules = { ...DEFAULT_RULES, ...t.rules }
+  const cleaning = t.cleaning ?? defaultCleaning(rules)
+  return { ...t, rules, cleaning, children: t.children ?? [], requirements: t.requirements ?? {} }
+}
+
+export function migrateWeekConfig(c: WeekConfig): WeekConfig {
+  const m = migrateTemplate(c)
+  return { ...m, leaves: m.leaves ?? [], pins: m.pins ?? [], notes: m.notes ?? '' }
 }

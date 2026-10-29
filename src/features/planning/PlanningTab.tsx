@@ -17,6 +17,8 @@ import { DayBoard } from './DayBoard'
 import { ShiftDialog, type ShiftDialogTarget } from './ShiftDialog'
 import { SummaryTable } from './SummaryTable'
 import { Diagnostics } from './Diagnostics'
+import { Suggestions } from './Suggestions'
+import { computeSuggestions, type Suggestion } from '@/domain/suggestions'
 
 export function PlanningTab({ onGoTo }: { onGoTo: (tab: string) => void }) {
   const week = useCurrentWeek()
@@ -65,6 +67,7 @@ function WeekPlanning({ weekId, onGoTo }: { weekId: string; onGoTo: (tab: string
   const week = useStore((s) => s.weeks[weekId])
   const setSchedule = useStore((s) => s.setSchedule)
   const updateShift = useStore((s) => s.updateShift)
+  const updateWeekConfig = useStore((s) => s.updateWeekConfig)
   const clearSchedule = useStore((s) => s.clearSchedule)
   const setStatus = useStore((s) => s.setStatus)
   const solver = useSolver()
@@ -76,11 +79,23 @@ function WeekPlanning({ weekId, onGoTo }: { weekId: string; onGoTo: (tab: string
     return evaluate(model, shifts)
   }, [config, schedule])
 
+  const suggestions = useMemo(() => computeSuggestions(config, schedule, evaluation), [config, schedule, evaluation])
+  const applySuggestion = (s: Suggestion) => {
+    if (!s.apply) return
+    if (s.apply.config) updateWeekConfig(weekId, s.apply.config)
+    for (const sh of s.apply.shifts ?? []) updateShift(weekId, sh.employeeId, sh.day, sh.shift)
+    toast.success('Suggestion appliquée.')
+  }
+
   const activeEmployees = config.employees.filter((e) => e.active)
   const hasSchedule = Object.values(schedule).some((row) => Object.values(row).some(Boolean))
 
   const budget = useMemo(() => {
-    const required = config.rules.openDays.reduce((acc: number, d) => acc + requiredMinutes(config.requirements[d] ?? []), 0)
+    const required = config.rules.openDays.reduce((acc: number, d) => {
+      const cl = config.cleaning?.[d]
+      const cleaners = cl && cl.minutes > 0 ? cl.employeeIds.filter((id) => activeEmployees.some((e) => e.id === id && e.workDays.includes(d) && !config.leaves.some((l) => l.employeeId === id && l.day === d))).length : 0
+      return acc + requiredMinutes(config.requirements[d] ?? []) + (cl ? cl.minutes * cleaners : 0)
+    }, 0)
     const available = activeEmployees.reduce((acc, e) => {
       const leave = config.leaves.filter((l) => l.employeeId === e.id).reduce((a, l) => a + l.minutes, 0)
       return acc + Math.max(0, e.weeklyMinutes - leave)
@@ -146,7 +161,7 @@ function WeekPlanning({ weekId, onGoTo }: { weekId: string; onGoTo: (tab: string
       {activeEmployees.length === 0 && (
         <Alert>
           <AlertTriangle />
-          <AlertTitle>Aucun membre d’équipe actif</AlertTitle>
+          <AlertTitle>Aucune membre de l’équipe active</AlertTitle>
           <AlertDescription>
             Ajoutez des personnes dans l’onglet <button className="underline" onClick={() => onGoTo('employees')}>Équipe</button> avant de générer un planning.
           </AlertDescription>
@@ -158,7 +173,7 @@ function WeekPlanning({ weekId, onGoTo }: { weekId: string; onGoTo: (tab: string
           <AlertTriangle />
           <AlertTitle>Les contrats ne couvrent pas les besoins de la semaine</AlertTitle>
           <AlertDescription>
-            Besoins : {fmtDuration(budget.required)} de présence · Disponible (contrats − congés) : {fmtDuration(budget.available)}.
+            Besoins : {fmtDuration(budget.required)} de présence (ménage inclus) · Disponible (contrats − congés) : {fmtDuration(budget.available)}.
             Il manque {fmtDuration(budget.required - budget.available)} : le planning comportera des heures supplémentaires ou des créneaux non couverts.
             Vous pouvez ajuster les <button className="underline" onClick={() => onGoTo('week')}>besoins de la semaine</button>.
           </AlertDescription>
@@ -166,7 +181,7 @@ function WeekPlanning({ weekId, onGoTo }: { weekId: string; onGoTo: (tab: string
       )}
       {budget.available >= budget.required && budget.required > 0 && (
         <p className="no-print text-xs text-muted-foreground">
-          Besoins : {fmtDuration(budget.required)} de présence · Disponible (contrats − congés) : {fmtDuration(budget.available)}.
+          Besoins : {fmtDuration(budget.required)} de présence (ménage inclus) · Disponible (contrats − congés) : {fmtDuration(budget.available)}.
         </p>
       )}
 
@@ -199,8 +214,9 @@ function WeekPlanning({ weekId, onGoTo }: { weekId: string; onGoTo: (tab: string
         <div className="lg:col-span-3">
           <SummaryTable week={week} stats={evaluation.stats} />
         </div>
-        <div className="lg:col-span-2">
+        <div className="space-y-4 lg:col-span-2">
           <Diagnostics violations={evaluation.violations} />
+          <Suggestions suggestions={suggestions} onApply={applySuggestion} />
         </div>
       </div>
 

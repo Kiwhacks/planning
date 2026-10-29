@@ -29,6 +29,8 @@ export interface CEmployee {
   mustWork: boolean[]
   /** Créneau verrouillé par l'utilisateur (non modifiable par le solveur). */
   frozen: boolean[]
+  /** Affectée au ménage ce jour-là. */
+  cleans: boolean[]
 }
 
 export interface CChild {
@@ -65,6 +67,12 @@ export interface Model {
   req: Uint8Array[]
   openSlot: number[]
   closeSlot: number[]
+  /** Fin du ménage (= closeSlot si pas de ménage ce jour). */
+  cleanEnd: number[]
+  /** Nombre de personnes affectées au ménage (et disponibles) par jour. */
+  cleanerCount: number[]
+  /** Durée de ménage prévue par jour (minutes, 0 = aucun). */
+  cleanMinutes: number[]
   employees: CEmployee[]
   children: CChild[]
   minPros: number
@@ -149,6 +157,7 @@ export function compile(cfg: WeekConfig, existing: Schedule | null): { model: Mo
       if (p.mustWork === true || p.start != null || p.end != null) mustWork[p.day] = true
     }
     const breakSlots = Math.round(e.breakMinutes / SLOT)
+    const cleans = Array(7).fill(false) as boolean[]
     return {
       id: e.id,
       name: e.name,
@@ -167,8 +176,29 @@ export function compile(cfg: WeekConfig, existing: Schedule | null): { model: Mo
       pinEnd,
       mustWork,
       frozen,
+      cleans,
     }
   })
+
+  // ménage : les personnes affectées restent après la fermeture
+  const cleanEnd: number[] = [...closeSlot]
+  const cleanerCount: number[] = Array(7).fill(0) as number[]
+  const cleanMinutes: number[] = Array(7).fill(0) as number[]
+  for (let d = 0; d < 7; d++) {
+    const cl = cfg.cleaning?.[d as DayIndex]
+    if (!isOpen[d] || !cl || cl.minutes <= 0 || closeSlot[d] < 0) continue
+    cleanMinutes[d] = cl.minutes
+    const end = Math.min(S, closeSlot[d] + Math.round(cl.minutes / SLOT))
+    for (const id of cl.employeeIds) {
+      const ce = employees.find((x) => x.id === id)
+      if (!ce || !ce.canWork[d]) continue
+      ce.cleans[d] = true
+      ce.mustWork[d] = true
+      ce.pinEnd[d] = end
+      cleanerCount[d]++
+    }
+    if (cleanerCount[d] > 0) cleanEnd[d] = end
+  }
 
   const empIndex = new Map(employees.map((e, i) => [e.id, i]))
   const children: CChild[] = cfg.children.map((c) => {
@@ -198,6 +228,9 @@ export function compile(cfg: WeekConfig, existing: Schedule | null): { model: Mo
     req,
     openSlot,
     closeSlot,
+    cleanEnd,
+    cleanerCount,
+    cleanMinutes,
     employees,
     children,
     minPros: rules.minProsWhenTwoOrMore,

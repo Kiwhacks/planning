@@ -69,7 +69,7 @@ export function EmployeesTab({ week }: { week: Week }) {
                 </TableCell>
                 <TableCell className="text-muted-foreground">{e.breakMinutes ? fmtDuration(e.breakMinutes) : 'aucune'}</TableCell>
                 <TableCell className="space-x-1">
-                  {!e.canBeAlone && <Badge variant="secondary">jamais seul·e</Badge>}
+                  {!e.canBeAlone && <Badge variant="secondary">jamais seule</Badge>}
                   {e.role !== 'pro' && <Badge variant="secondary">hors taux d’encadrement</Badge>}
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
@@ -135,7 +135,7 @@ function EmployeeDialog({ employee, week, onClose, onSave }: { employee: Employe
                   {(Object.keys(ROLE_LABELS) as StaffRole[]).map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">Apprenti·es et stagiaires ne comptent pas dans le taux d’encadrement.</p>
+              <p className="text-xs text-muted-foreground">Apprenties et stagiaires ne comptent pas dans le taux d’encadrement.</p>
             </div>
             <div className="space-y-1">
               <Label>Heures hebdomadaires</Label>
@@ -184,14 +184,14 @@ function EmployeeDialog({ employee, week, onClose, onSave }: { employee: Employe
           </div>
           <div className="flex items-center justify-between rounded-lg border p-3">
             <div>
-              <Label>Peut ouvrir / fermer seul·e</Label>
+              <Label>Peut ouvrir / fermer seule</Label>
               <p className="text-xs text-muted-foreground">Décochez si la personne ne doit jamais être seule.</p>
             </div>
             <Switch checked={e.canBeAlone} onCheckedChange={(c) => set('canBeAlone', c)} />
           </div>
           <div className="flex items-center justify-between rounded-lg border p-3">
             <div>
-              <Label>Actif·ve cette semaine</Label>
+              <Label>Active cette semaine</Label>
               <p className="text-xs text-muted-foreground">Une personne inactive est ignorée par le planning.</p>
             </div>
             <Switch checked={e.active} onCheckedChange={(c) => set('active', c)} />

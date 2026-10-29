@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { buildExampleTemplate, buildExampleWeekExtras, weekConfigFromTemplate } from '@/domain/defaults'
+import { buildExampleTemplate, buildExampleWeekExtras, migrateTemplate, migrateWeekConfig, weekConfigFromTemplate } from '@/domain/defaults'
 import type { DayIndex, Schedule, Shift, TemplateConfig, Week, WeekConfig, WeekStatus } from '@/domain/types'
 import { mondayISO, weekIdOf } from './weekKey'
 
@@ -10,12 +10,24 @@ export interface PersistedData {
   weeks: Record<string, Week>
 }
 
+export interface SyncState {
+  /** unknown = chargement, local = navigateur seul, remote = base de données, auth = code d'accès requis */
+  mode: 'unknown' | 'local' | 'remote' | 'auth'
+  status: 'idle' | 'saving' | 'saved' | 'error'
+  error: string | null
+}
+
 interface StoreState {
   template: TemplateConfig
   weeks: Record<string, Week>
   currentWeekId: string | null
   /** Lundi (YYYY-MM-DD) d'une semaine affichée mais pas encore créée. */
   pendingMonday: string | null
+  sync: SyncState
+
+  setSync: (s: Partial<SyncState>) => void
+  /** Remplace les données par celles de la base (sans déclencher de sauvegarde). */
+  hydrate: (data: { template: TemplateConfig; weeks: Record<string, Week> }) => void
 
   setPendingMonday: (m: string | null) => void
   setCurrentWeek: (id: string | null) => void
@@ -55,6 +67,14 @@ export const useStore = create<StoreState>()(
     (set, get) => ({
       ...initialState(),
       pendingMonday: null,
+      sync: { mode: 'unknown', status: 'idle', error: null },
+
+      setSync: (p) => set({ sync: { ...get().sync, ...p } }),
+      hydrate: ({ template, weeks }) => {
+        const current = get().currentWeekId
+        const ids = Object.keys(weeks).sort((a, b) => b.localeCompare(a))
+        set({ template, weeks, currentWeekId: current && weeks[current] ? current : ids[0] ?? null, pendingMonday: null })
+      },
 
       setPendingMonday: (m) => set({ pendingMonday: m }),
       setCurrentWeek: (id) => set({ currentWeekId: id, pendingMonday: id ? null : get().pendingMonday }),
@@ -131,8 +151,8 @@ export const useStore = create<StoreState>()(
       saveWeekAsTemplate: (id) => {
         const w = get().weeks[id]
         if (!w) return
-        const { employees, children, rules, requirements } = structuredClone(w.config)
-        set({ template: { employees, children, rules, requirements } })
+        const { employees, children, rules, requirements, cleaning } = structuredClone(w.config)
+        set({ template: { employees, children, rules, requirements, cleaning } })
       },
 
       resetWeekFromTemplate: (id) => {
@@ -152,13 +172,26 @@ export const useStore = create<StoreState>()(
 
       importData: (data) => {
         if (!data || data.version !== 1 || !data.template || !data.weeks) throw new Error('Fichier invalide')
-        set({ template: data.template, weeks: data.weeks, currentWeekId: Object.keys(data.weeks)[0] ?? null })
+        const weeks: Record<string, Week> = {}
+        for (const w of Object.values(data.weeks)) weeks[w.id] = { ...w, config: migrateWeekConfig(w.config), schedule: w.schedule ?? {} }
+        set({ template: migrateTemplate(data.template), weeks, currentWeekId: Object.keys(weeks).sort((a, b) => b.localeCompare(a))[0] ?? null })
       },
     }),
     {
       name: 'planning-creche-v1',
       version: 1,
       partialize: (s) => ({ template: s.template, weeks: s.weeks, currentWeekId: s.currentWeekId }) as unknown as StoreState,
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<Pick<StoreState, 'template' | 'weeks' | 'currentWeekId'>>
+        const weeks: Record<string, Week> = {}
+        for (const w of Object.values(p.weeks ?? {})) weeks[w.id] = { ...w, config: migrateWeekConfig(w.config), schedule: w.schedule ?? {} }
+        return {
+          ...current,
+          template: p.template ? migrateTemplate(p.template) : current.template,
+          weeks: p.weeks ? weeks : current.weeks,
+          currentWeekId: p.currentWeekId ?? current.currentWeekId,
+        }
+      },
     },
   ),
 )

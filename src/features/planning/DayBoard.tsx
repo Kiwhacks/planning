@@ -1,6 +1,6 @@
 import { Lock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { normalizeRequirements } from '@/domain/requirements'
+import { dayOpening, normalizeRequirements } from '@/domain/requirements'
 import { SLOT, fmtDuration, toHHMM } from '@/domain/time'
 import { DAY_LABELS, type DayCoverage, type DayIndex, type Shift, type Week } from '@/domain/types'
 import { dayDate } from '@/store/weekKey'
@@ -20,6 +20,11 @@ export function DayBoard({ day, week, coverage, onEdit }: Props) {
   const pct = (t: number) => ((t - rules.dayStart) / span) * 100
   const reqs = normalizeRequirements(config.requirements[day] ?? [])
   const employees = config.employees.filter((e) => e.active)
+  const opening = dayOpening(reqs)
+  const cleaning = config.cleaning?.[day]
+  const cleanStart = opening?.close ?? null
+  const cleanEnd = cleanStart != null && cleaning && cleaning.minutes > 0 ? Math.min(rules.dayEnd, cleanStart + cleaning.minutes) : null
+  const isCleaner = (id: string) => !!cleaning?.employeeIds.includes(id)
   const hours: number[] = []
   for (let t = Math.ceil(rules.dayStart / 60) * 60; t <= rules.dayEnd; t += 60) hours.push(t)
 
@@ -65,6 +70,15 @@ export function DayBoard({ day, week, coverage, onEdit }: Props) {
                 {r.staff}
               </div>
             ))}
+            {cleanStart != null && cleanEnd != null && (
+              <div
+                className="absolute inset-y-0 flex items-center justify-center border-r border-background bg-violet-200/70 text-[10px] text-violet-900"
+                style={{ left: `${pct(cleanStart)}%`, width: `${pct(cleanEnd) - pct(cleanStart)}%` }}
+                title={`Ménage ${toHHMM(cleanStart)}–${toHHMM(cleanEnd)} : ${cleaning?.employeeIds.length ? cleaning.employeeIds.map((id) => config.employees.find((e) => e.id === id)?.name ?? '?').join(', ') : 'personne affectée'}`}
+              >
+                ménage
+              </div>
+            )}
             {reqs.length === 0 && <div className="flex h-full items-center justify-center text-muted-foreground">Fermé / aucun besoin défini</div>}
           </div>
 
@@ -116,6 +130,13 @@ export function DayBoard({ day, week, coverage, onEdit }: Props) {
                           title={`Pause ${toHHMM(sh.breakStart)}–${toHHMM(sh.breakStart + e.breakMinutes)}`}
                         />
                       )}
+                      {isCleaner(e.id) && cleanStart != null && sh.end > cleanStart && (
+                        <div
+                          className="absolute inset-y-0 bg-violet-900/35"
+                          style={{ left: `${((cleanStart - sh.start) / (sh.end - sh.start)) * 100}%`, width: `${((sh.end - cleanStart) / (sh.end - sh.start)) * 100}%`, backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,.35) 0 2px, transparent 2px 6px)' }}
+                          title={`Ménage ${toHHMM(cleanStart)}–${toHHMM(sh.end)}`}
+                        />
+                      )}
                       <span className="relative z-10 truncate drop-shadow-sm">
                         {toHHMM(sh.start)}–{toHHMM(sh.end)}
                         <span className="ml-1 opacity-80">({fmtDuration(sh.end - sh.start - (sh.breakStart != null ? e.breakMinutes : 0))})</span>
@@ -129,10 +150,10 @@ export function DayBoard({ day, week, coverage, onEdit }: Props) {
           })}
 
           {/* Couverture */}
-          <div className="flex items-center text-muted-foreground">Présents</div>
+          <div className="flex items-center text-muted-foreground">Présentes</div>
           <div className="relative flex h-5 overflow-hidden rounded">
             {coverage?.slots.map((s) => {
-              const status = s.required === 0 ? (s.present > 0 ? 'outside' : 'closed') : s.present < s.required ? 'under' : s.present > s.required ? 'over' : 'ok'
+              const status = s.cleaning ? 'cleaning' : s.required === 0 ? (s.present > 0 ? 'outside' : 'closed') : s.problem ? 'under' : s.present > s.required ? 'over' : 'ok'
               return (
                 <div
                   key={s.time}
@@ -142,11 +163,12 @@ export function DayBoard({ day, week, coverage, onEdit }: Props) {
                     status === 'under' && 'bg-red-300 text-red-950',
                     status === 'over' && 'bg-sky-200 text-sky-900',
                     status === 'outside' && 'bg-amber-200 text-amber-900',
+                    status === 'cleaning' && 'bg-violet-200 text-violet-900',
                     status === 'closed' && 'bg-muted/40',
                   )}
-                  title={`${toHHMM(s.time)}–${toHHMM(s.time + SLOT)} : ${s.present} présent${s.present > 1 ? 's' : ''} (${s.pros} pro) pour un besoin de ${s.required}`}
+                  title={s.cleaning ? `${toHHMM(s.time)}–${toHHMM(s.time + SLOT)} : ménage, ${s.present} présente${s.present > 1 ? 's' : ''}` : `${toHHMM(s.time)}–${toHHMM(s.time + SLOT)} : ${s.present} présente${s.present > 1 ? 's' : ''} (${s.pros} pro) pour un besoin de ${s.required}`}
                 >
-                  {s.required > 0 || s.present > 0 ? s.present : ''}
+                  {s.required > 0 || s.present > 0 || s.cleaning ? s.present : ''}
                 </div>
               )
             })}

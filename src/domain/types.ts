@@ -4,12 +4,12 @@ export type DayIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6
 export const DAY_LABELS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] as const
 export const DAY_SHORT = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as const
 
-/** Statut : seul·es les « pro » comptent dans le taux d'encadrement. */
+/** Statut : seules les « pro » comptent dans le taux d'encadrement. */
 export type StaffRole = 'pro' | 'apprenti' | 'stagiaire'
 
 export const ROLE_LABELS: Record<StaffRole, string> = {
-  pro: 'Professionnel·le',
-  apprenti: 'Apprenti·e',
+  pro: 'Professionnelle',
+  apprenti: 'Apprentie',
   stagiaire: 'Stagiaire',
 }
 
@@ -32,7 +32,7 @@ export interface Employee {
   maxAmplitudeMinutes: number
   /** Pause quotidienne non travaillée (0 = pas de pause). */
   breakMinutes: number
-  /** Peut ouvrir / fermer seul·e (être la seule personne présente). */
+  /** Peut ouvrir / fermer seule (être la seule personne présente). */
   canBeAlone: boolean
   active: boolean
 }
@@ -68,7 +68,7 @@ export interface Rules {
   openDays: DayIndex[]
   /** Taux d'encadrement utilisé pour calculer les besoins depuis la liste des enfants. */
   ratio: RatioStep[]
-  /** Nombre minimum de professionnel·les (hors apprenti·es / stagiaires) dès que ≥ 2 personnes sont requises. */
+  /** Nombre minimum de professionnelles (hors apprenties / stagiaires) dès que ≥ 2 personnes sont requises. */
   minProsWhenTwoOrMore: number
   /** Fenêtre souhaitée pour les pauses. */
   breakWindowStart: number
@@ -82,8 +82,16 @@ export interface Rules {
   defaultBreakMinutes: number
   /** Importance des heures supplémentaires (1 = normal, 3 = très pénalisées). */
   overtimeStrictness: 1 | 2 | 3
-  /** Importance de la présence des référent·es / relais auprès des enfants. */
+  /** Importance de la présence des référentes / relais auprès des enfants. */
   referentImportance: 0 | 1 | 2
+  /** Durée de ménage par défaut après le départ du dernier enfant (minutes). */
+  defaultCleaningMinutes: number
+}
+
+/** Ménage d'un jour : durée après le départ du dernier enfant et personnes affectées. */
+export interface CleaningDay {
+  minutes: number
+  employeeIds: string[]
 }
 
 /** Besoin en personnel sur une plage horaire. */
@@ -132,6 +140,7 @@ export interface TemplateConfig {
   children: Child[]
   rules: Rules
   requirements: Partial<Record<DayIndex, Requirement[]>>
+  cleaning: Partial<Record<DayIndex, CleaningDay>>
 }
 
 /** Configuration propre à une semaine (copie modifiable du modèle + spécificités). */
@@ -177,8 +186,9 @@ export interface EmployeeWeekStats {
 
 export interface DayCoverage {
   day: DayIndex
-  /** Pour chaque créneau : besoin, présents, pros présents. */
-  slots: { time: number; required: number; present: number; pros: number }[]
+  /** Pour chaque créneau : besoin, présentes, pros présentes, créneau de ménage, problème bloquant. */
+  slots: { time: number; required: number; present: number; pros: number; cleaning: boolean; problem: boolean }[]
+  /** Heures-personnes requises, ménage inclus. */
   requiredMinutes: number
   presentMinutes: number
   missingMinutes: number

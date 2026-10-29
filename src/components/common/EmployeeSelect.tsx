@@ -19,7 +19,7 @@ export function EmployeeSelect({ employees, value, onChange, placeholder = 'Choi
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
-        {allowNone && <SelectItem value={NONE}>— Aucun·e —</SelectItem>}
+        {allowNone && <SelectItem value={NONE}>— Aucune —</SelectItem>}
         {employees.map((e) => (
           <SelectItem key={e.id} value={e.id}>
             <span className="inline-block size-2.5 rounded-full" style={{ background: e.color }} />

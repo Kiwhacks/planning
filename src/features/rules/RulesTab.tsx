@@ -39,12 +39,12 @@ export function RulesTab({ week }: { week: Week }) {
           </div>
         </SectionCard>
 
-        <SectionCard title="Encadrement" description="Règles de présence des professionnel·les.">
+        <SectionCard title="Encadrement" description="Règles de présence des professionnelles.">
           <div className="grid gap-3">
             <div className="space-y-1">
-              <Label>Professionnel·les minimum dès que 2 personnes ou plus sont requises</Label>
+              <Label>Professionnelles minimum dès que 2 personnes ou plus sont requises</Label>
               <Input type="number" min={1} max={5} value={r.minProsWhenTwoOrMore} onChange={(e) => set('minProsWhenTwoOrMore', Math.max(1, Number(e.target.value) || 1))} />
-              <p className="text-xs text-muted-foreground">Les apprenti·es et stagiaires complètent l’équipe mais ne comptent pas dans ce minimum. Une personne seule doit toujours être une professionnelle autorisée à ouvrir/fermer seule.</p>
+              <p className="text-xs text-muted-foreground">Les apprenties et stagiaires complètent l’équipe mais ne comptent pas dans ce minimum. Une personne seule doit toujours être une professionnelle autorisée à ouvrir/fermer seule.</p>
             </div>
             <div className="space-y-1">
               <Label>Taux d’encadrement (pour calculer les besoins depuis les enfants)</Label>
@@ -100,7 +100,7 @@ export function RulesTab({ week }: { week: Week }) {
               <p className="text-xs text-muted-foreground">La couverture des besoins reste toujours prioritaire sur les heures supplémentaires.</p>
             </div>
             <div className="space-y-1">
-              <Label>Présence des référent·es / relais</Label>
+              <Label>Présence des référentes / relais</Label>
               <Select value={String(r.referentImportance)} onValueChange={(v) => set('referentImportance', Number(v) as Rules['referentImportance'])}>
                 <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -113,8 +113,8 @@ export function RulesTab({ week }: { week: Week }) {
           </div>
         </SectionCard>
 
-        <SectionCard title="Valeurs par défaut pour les nouvelles personnes" className="lg:col-span-2">
-          <div className="grid gap-3 sm:grid-cols-4">
+        <SectionCard title="Valeurs par défaut" description="Pour les nouvelles personnes et les nouvelles semaines." className="lg:col-span-2">
+          <div className="grid gap-3 sm:grid-cols-5">
             <div className="space-y-1">
               <Label>Journée minimale</Label>
               <DurationInput value={r.defaultMinDailyMinutes} onChange={(m) => m != null && set('defaultMinDailyMinutes', m)} />
@@ -130,6 +130,11 @@ export function RulesTab({ week }: { week: Week }) {
             <div className="space-y-1">
               <Label>Pause</Label>
               <DurationInput value={r.defaultBreakMinutes} onChange={(m) => m != null && set('defaultBreakMinutes', m)} />
+            </div>
+            <div className="space-y-1">
+              <Label>Ménage quotidien</Label>
+              <DurationInput value={r.defaultCleaningMinutes} onChange={(m) => m != null && set('defaultCleaningMinutes', m)} placeholder="0h = aucun" />
+              <p className="text-xs text-muted-foreground">Après le départ du dernier enfant ; les personnes sont affectées par jour dans l’onglet Semaine.</p>
             </div>
           </div>
         </SectionCard>
