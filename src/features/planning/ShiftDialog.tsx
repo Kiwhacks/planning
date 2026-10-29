@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { TimeInput } from '@/components/common/TimeInput'
 import { AnimalAvatar } from '@/components/common/AnimalAvatar'
-import { dayOpening, normalizeRequirements } from '@/domain/requirements'
+import { dayOpening, effectiveDayEnd, normalizeRequirements } from '@/domain/requirements'
 import { fmtDuration, toHHMM } from '@/domain/time'
 import { DAY_LABELS, type DayIndex, type Shift, type Week } from '@/domain/types'
 
@@ -29,7 +29,7 @@ export function ShiftDialog({ week, target, onClose, onSave }: Props) {
     if (target.shift) return target.shift
     const start = opening?.open ?? week.config.rules.dayStart
     const dur = employee.fixedDailyMinutes ?? Math.min(employee.maxDailyMinutes, Math.round(employee.weeklyMinutes / Math.max(1, employee.workDays.length) / 15) * 15)
-    const end = Math.min(week.config.rules.dayEnd, start + dur + employee.breakMinutes)
+    const end = Math.min(effectiveDayEnd(week.config), start + dur + employee.breakMinutes)
     return { start, end, breakStart: employee.breakMinutes > 0 ? Math.round((start + end) / 2 / 15) * 15 - 30 : null, locked: true }
   }, [target, employee, opening, week.config.rules])
 

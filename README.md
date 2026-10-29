@@ -23,7 +23,7 @@ Les données sont enregistrées dans une base PostgreSQL (Neon) via une petite A
 | Nombre de personnes présentes ≥ besoin, à chaque créneau de 15 min | bloquante |
 | Au moins N professionnelles (hors apprenties / stagiaires) dès que ≥ 2 personnes sont requises ; une personne seule doit être une pro autorisée à être seule | bloquante |
 | Jours travaillés, congés, contraintes fixes (heures imposées, jour imposé / interdit) | bloquante |
-| Ménage : les personnes affectées restent jusqu'à la fin du ménage après le départ du dernier enfant | bloquante |
+| Ménage : les personnes affectées restent jusqu'à la fin du ménage après le départ du dernier enfant, terminent leur journée (pause comprise) juste avant, et le temps de ménage compte dans les heures travaillées | bloquante |
 | Journée fixe, durée maximale par jour, amplitude maximale, pause obligatoire | bloquante |
 | Pause repas : tout créneau couvrant la fenêtre (12h45–15h par défaut, réglable) a une pause placée dans cette fenêtre, même si la journée est courte | bloquante |
 | Heures hebdomadaires du contrat (heures sup. pénalisées et réparties, heures manquantes pénalisées) | forte |

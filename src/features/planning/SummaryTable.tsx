@@ -9,9 +9,10 @@ export function SummaryTable({ week, stats }: { week: Week; stats: EmployeeWeekS
   const days = week.config.rules.openDays
   const employees = week.config.employees.filter((e) => e.active)
   const totals = stats.reduce(
-    (acc, s) => ({ worked: acc.worked + s.workedMinutes, contract: acc.contract + s.contractMinutes, delta: acc.delta + Math.max(0, s.deltaMinutes) }),
-    { worked: 0, contract: 0, delta: 0 },
+    (acc, s) => ({ worked: acc.worked + s.workedMinutes, contract: acc.contract + s.contractMinutes, delta: acc.delta + Math.max(0, s.deltaMinutes), cleaning: acc.cleaning + s.cleaningMinutes }),
+    { worked: 0, contract: 0, delta: 0, cleaning: 0 },
   )
+  const showCleaning = totals.cleaning > 0
   return (
     <Card className="print-break-inside-avoid">
       <CardHeader className="py-3"><CardTitle className="text-base">Récapitulatif des heures</CardTitle></CardHeader>
@@ -22,6 +23,7 @@ export function SummaryTable({ week, stats }: { week: Week; stats: EmployeeWeekS
               <TableHead>Personne</TableHead>
               {days.map((d) => <TableHead key={d} className="text-right">{DAY_SHORT[d]}</TableHead>)}
               <TableHead className="text-right">Travaillé</TableHead>
+              {showCleaning && <TableHead className="text-right" title="Temps de ménage, inclus dans le temps travaillé">dont ménage</TableHead>}
               <TableHead className="text-right">Congés</TableHead>
               <TableHead className="text-right">Contrat</TableHead>
               <TableHead className="text-right">Écart</TableHead>
@@ -46,6 +48,7 @@ export function SummaryTable({ week, stats }: { week: Week; stats: EmployeeWeekS
                     )
                   })}
                   <TableCell className="text-right tabular-nums">{fmtDuration(s.workedMinutes)}</TableCell>
+                  {showCleaning && <TableCell className="text-right tabular-nums text-violet-700">{s.cleaningMinutes ? fmtDuration(s.cleaningMinutes) : '—'}</TableCell>}
                   <TableCell className="text-right tabular-nums text-muted-foreground">{s.leaveMinutes ? fmtDuration(s.leaveMinutes) : '—'}</TableCell>
                   <TableCell className="text-right tabular-nums">{fmtDuration(s.contractMinutes)}</TableCell>
                   <TableCell className={cn('text-right font-medium tabular-nums', s.deltaMinutes > 0 && 'text-red-700', s.deltaMinutes < 0 && 'text-amber-700', s.deltaMinutes === 0 && 'text-green-700')}>
@@ -58,6 +61,7 @@ export function SummaryTable({ week, stats }: { week: Week; stats: EmployeeWeekS
               <TableCell>Total</TableCell>
               {days.map((d) => <TableCell key={d} />)}
               <TableCell className="text-right tabular-nums">{fmtDuration(totals.worked)}</TableCell>
+              {showCleaning && <TableCell className="text-right tabular-nums text-violet-700">{fmtDuration(totals.cleaning)}</TableCell>}
               <TableCell />
               <TableCell className="text-right tabular-nums">{fmtDuration(totals.contract)}</TableCell>
               <TableCell className={cn('text-right tabular-nums', totals.delta > 0 && 'text-red-700')}>{totals.delta > 0 ? `+${fmtDuration(totals.delta)} sup.` : '—'}</TableCell>

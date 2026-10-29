@@ -1,7 +1,7 @@
 import { Lock } from 'lucide-react'
 import { AnimalAvatar } from '@/components/common/AnimalAvatar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { dayOpening, normalizeRequirements } from '@/domain/requirements'
+import { dayOpening, effectiveDayEnd, normalizeRequirements } from '@/domain/requirements'
 import { SLOT, fmtDuration, toHHMM } from '@/domain/time'
 import { DAY_LABELS, type DayCoverage, type DayIndex, type Shift, type Week } from '@/domain/types'
 import { dayDate } from '@/store/weekKey'
@@ -17,17 +17,18 @@ interface Props {
 export function DayBoard({ day, week, coverage, onEdit }: Props) {
   const { config, schedule } = week
   const { rules } = config
-  const span = rules.dayEnd - rules.dayStart
+  const dayEnd = effectiveDayEnd(config)
+  const span = dayEnd - rules.dayStart
   const pct = (t: number) => ((t - rules.dayStart) / span) * 100
   const reqs = normalizeRequirements(config.requirements[day] ?? [])
   const employees = config.employees.filter((e) => e.active)
   const opening = dayOpening(reqs)
   const cleaning = config.cleaning?.[day]
   const cleanStart = opening?.close ?? null
-  const cleanEnd = cleanStart != null && cleaning && cleaning.minutes > 0 ? Math.min(rules.dayEnd, cleanStart + cleaning.minutes) : null
+  const cleanEnd = cleanStart != null && cleaning && cleaning.minutes > 0 ? cleanStart + cleaning.minutes : null
   const isCleaner = (id: string) => !!cleaning?.employeeIds.includes(id)
   const hours: number[] = []
-  for (let t = Math.ceil(rules.dayStart / 60) * 60; t <= rules.dayEnd; t += 60) hours.push(t)
+  for (let t = Math.ceil(rules.dayStart / 60) * 60; t <= dayEnd; t += 60) hours.push(t)
 
   return (
     <Card className="print-break-inside-avoid overflow-hidden">
@@ -111,13 +112,13 @@ export function DayBoard({ day, week, coverage, onEdit }: Props) {
           <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
             <span>{toHHMM(rules.dayStart)}</span>
             <span>couverture : vert = ok · rouge = manque · bleu = surplus · violet = ménage</span>
-            <span>{toHHMM(rules.dayEnd)}</span>
+            <span>{toHHMM(dayEnd)}</span>
           </div>
         </div>
 
         {/* Vue graphique (tablette et ordinateur) */}
         <div className="hidden overflow-x-auto sm:block">
-        <div className="grid min-w-[560px] grid-cols-[7.5rem_1fr] gap-x-2 text-xs">
+        <div className="grid min-w-[560px] grid-cols-[7.5rem_1fr] gap-x-2 pr-6 text-xs">
           {/* Axe des heures */}
           <div />
           <div className="relative h-5">
@@ -207,7 +208,7 @@ export function DayBoard({ day, week, coverage, onEdit }: Props) {
                           style={{ left: `${((cleanStart - sh.start) / (sh.end - sh.start)) * 100}%`, width: `${((sh.end - cleanStart) / (sh.end - sh.start)) * 100}%`, backgroundColor: 'rgba(0,0,0,.28)', backgroundImage: 'radial-gradient(circle, rgba(255,255,255,.95) 1.2px, transparent 1.7px)', backgroundSize: '6px 6px' }}
                           title={`Ménage ${toHHMM(cleanStart)}–${toHHMM(sh.end)}`}
                         >
-                          {sh.end - cleanStart >= 60 && <span className="relative z-10 truncate drop-shadow-sm">ménage</span>}
+                          {sh.end - cleanStart >= 30 && <span className="relative z-10 truncate drop-shadow-sm">ménage</span>}
                         </div>
                       )}
                       <span className="relative z-10 truncate drop-shadow-sm">

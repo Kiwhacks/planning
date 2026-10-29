@@ -192,7 +192,11 @@ function anneal(model: Model, start: Shifts, iterations: number, rand: () => num
         if (!clampShift(model, emp, d, sh)) continue
         changes.push({ e, d, sh })
       } else if (r < 0.75 && sh.b >= 0) {
-        if (rand() < 0.7) sh.b += pickDelta()
+        const winLo = Math.max(sh.s + 1, model.breakWinStart)
+        const winHi = Math.min(sh.e - 1 - emp.breakSlots, model.breakWinEnd - emp.breakSlots)
+        const u = rand()
+        if (u < 0.5) sh.b += pickDelta()
+        else if (u < 0.8 && winLo <= winHi) sh.b = winLo + Math.floor(rand() * (winHi - winLo + 1))
         else sh.b = sh.s + 1 + Math.floor(rand() * Math.max(1, sh.e - emp.breakSlots - sh.s - 1))
         if (sh.b <= sh.s || sh.b + emp.breakSlots >= sh.e) continue
         changes.push({ e, d, sh })

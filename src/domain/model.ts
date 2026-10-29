@@ -1,5 +1,5 @@
 import { SLOT } from './time'
-import { normalizeRequirements, requiredAt } from './requirements'
+import { effectiveDayEnd, normalizeRequirements, requiredAt } from './requirements'
 import type { DayIndex, Schedule, Shift, WeekConfig } from './types'
 
 /** Créneau interne : en indices de créneaux de 15 min depuis `dayStart`. b = -1 → pas de pause. */
@@ -75,6 +75,8 @@ export interface Model {
   cleanerCount: number[]
   /** Durée de ménage prévue par jour (minutes, 0 = aucun). */
   cleanMinutes: number[]
+  /** Fin de journée effective (minutes), ménage compris. */
+  dayEnd: number
   employees: CEmployee[]
   children: CChild[]
   minPros: number
@@ -110,7 +112,8 @@ export function makeWeights(cfg: WeekConfig): Weights {
 export function compile(cfg: WeekConfig, existing: Schedule | null): { model: Model; shifts: Shifts } {
   const { rules } = cfg
   const dayStart = rules.dayStart
-  const S = Math.max(1, Math.ceil((rules.dayEnd - rules.dayStart) / SLOT))
+  const dayEnd = effectiveDayEnd(cfg)
+  const S = Math.max(1, Math.ceil((dayEnd - rules.dayStart) / SLOT))
   const toSlot = (m: number) => Math.round((m - dayStart) / SLOT)
   const days = [...rules.openDays].sort() as DayIndex[]
   const isOpen = Array.from({ length: 7 }, (_, d) => days.includes(d as DayIndex))
@@ -234,6 +237,7 @@ export function compile(cfg: WeekConfig, existing: Schedule | null): { model: Mo
     cleanEnd,
     cleanerCount,
     cleanMinutes,
+    dayEnd,
     employees,
     children,
     minPros: rules.minProsWhenTwoOrMore,

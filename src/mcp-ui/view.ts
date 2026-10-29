@@ -64,8 +64,9 @@ function render(r: WeekReport) {
     })
     .join('')
 
+  const anyCleaning = r.totals.some((t) => (t.cleaning ?? 0) > 0)
   const totals = r.totals
-    .map((t) => `<tr><td>${avatar(r.employees.find((e) => e.id === t.employeeId)?.avatar, t.color)}${esc(t.employee)}</td><td>${dur(t.worked)}</td><td>${t.leave ? dur(t.leave) : '—'}</td><td>${dur(t.contract)}</td><td class="${t.delta > 0 ? 'err' : t.delta < 0 ? 'warn' : 'ok'}">${t.delta > 0 ? '+' : ''}${dur(t.delta)}</td></tr>`)
+    .map((t) => `<tr><td>${avatar(r.employees.find((e) => e.id === t.employeeId)?.avatar, t.color)}${esc(t.employee)}</td><td>${dur(t.worked)}</td>${anyCleaning ? `<td class="clean">${t.cleaning ? dur(t.cleaning) : '—'}</td>` : ''}<td>${t.leave ? dur(t.leave) : '—'}</td><td>${dur(t.contract)}</td><td class="${t.delta > 0 ? 'err' : t.delta < 0 ? 'warn' : 'ok'}">${t.delta > 0 ? '+' : ''}${dur(t.delta)}</td></tr>`)
     .join('')
   const ot = r.totals.reduce((a, t) => a + Math.max(0, t.delta), 0)
 
@@ -77,7 +78,7 @@ function render(r: WeekReport) {
     ${r.hasSchedule ? '<div class="legend"><span><i></i>travail</span><span><i class="p"></i>pause</span><span><i class="m"></i>ménage</span></div>' : '<p class="muted">Aucun planning généré pour cette semaine. Demandez « génère le planning ».</p>'}
     ${dayHtml}
     <section class="day"><header><h3>Récapitulatif</h3></header>
-      <table><thead><tr><th>Personne</th><th>Travaillé</th><th>Congés</th><th>Contrat</th><th>Écart</th></tr></thead><tbody>${totals}</tbody></table>
+      <table><thead><tr><th>Personne</th><th>Travaillé</th>${anyCleaning ? '<th>dont ménage</th>' : ''}<th>Congés</th><th>Contrat</th><th>Écart</th></tr></thead><tbody>${totals}</tbody></table>
     </section>
     ${errors.length || warnings.length ? `<section class="day"><header><h3>Points de vigilance</h3></header><ul>${errors.map((v) => `<li class="err">${esc(v.message)}</li>`).join('')}${warnings.map((v) => `<li class="warn">${esc(v.message)}</li>`).join('')}</ul></section>` : ''}
     ${r.suggestions.length ? `<section class="day"><header><h3>Suggestions</h3></header><ul>${r.suggestions.map((s) => `<li>💡 ${esc(s.message)}${s.detail ? ` <small class="muted">${esc(s.detail)}</small>` : ''}</li>`).join('')}</ul></section>` : ''}

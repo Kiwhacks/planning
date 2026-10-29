@@ -106,6 +106,8 @@ export function shiftCost(model: Model, emp: CEmployee, d: number, sh: IShift | 
   if (amp > emp.maxAmp) cost += W.HARD * (amp - emp.maxAmp)
   if (emp.pinStart[d] >= 0 && sh.s !== emp.pinStart[d]) cost += W.HARD * Math.abs(sh.s - emp.pinStart[d])
   if (emp.pinEnd[d] >= 0 && sh.e !== emp.pinEnd[d]) cost += W.HARD * Math.abs(sh.e - emp.pinEnd[d])
+  // la personne qui fait le ménage termine sa journée juste avant : pas de pause à cheval sur la fermeture
+  if (emp.cleans[d] && sh.b >= 0 && sh.b + emp.breakSlots > model.closeSlot[d]) cost += W.HARD * (sh.b + emp.breakSlots - model.closeSlot[d])
   if (breakRequired(model, emp, sh)) {
     if (sh.b < 0 || sh.b <= sh.s || sh.b + emp.breakSlots >= sh.e) cost += W.HARD
     else {
@@ -252,6 +254,7 @@ export function evaluate(model: Model, shifts: Shifts): Evaluation {
     const perDay: Partial<Record<DayIndex, number>> = {}
     let worked = 0
     let leave = 0
+    let cleaning = 0
     for (let d = 0; d < 7; d++) {
       const sh = shifts[i][d]
       const dl = DAY_LABELS[d]
@@ -267,6 +270,8 @@ export function evaluate(model: Model, shifts: Shifts): Evaluation {
         if (emp.fixedDaily < 0 && w < emp.minDaily * SLOT) violations.push({ severity: 'warning', day: d as DayIndex, employeeId: emp.id, message: `${dl} : journée très courte pour ${emp.name} (${fmtDuration(w)}).` })
         if (emp.pinStart[d] >= 0 && sh.s !== emp.pinStart[d]) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: `${dl} : ${emp.name} devrait commencer à ${time(emp.pinStart[d])} (planifié ${time(sh.s)}).` })
         if (emp.pinEnd[d] >= 0 && sh.e !== emp.pinEnd[d]) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: emp.cleans[d] ? `${dl} : ${emp.name} est affectée au ménage et devrait finir à ${time(emp.pinEnd[d])} (planifié ${time(sh.e)}).` : `${dl} : ${emp.name} devrait finir à ${time(emp.pinEnd[d])} (planifié ${time(sh.e)}).` })
+        if (emp.cleans[d] && sh.b >= 0 && sh.b + emp.breakSlots > model.closeSlot[d]) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: `${dl} : ${emp.name} fait le ménage et doit finir sa journée juste avant (pause planifiée à ${time(sh.b)}, après la fermeture de ${time(model.closeSlot[d])}).` })
+        if (emp.cleans[d] && sh.e > model.closeSlot[d]) cleaning += (Math.min(sh.e, model.cleanEnd[d]) - Math.max(sh.s, model.closeSlot[d])) * SLOT
         if (breakRequired(model, emp, sh)) {
           const win = `${time(model.breakWinStart)}–${time(model.breakWinEnd)}`
           if (sh.b < 0 || sh.b <= sh.s || sh.b + emp.breakSlots >= sh.e) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: `${dl} : pause manquante ou mal placée pour ${emp.name}${lunchFits(model, emp, sh) ? ` (pause repas due entre ${win})` : ''}.` })
@@ -284,7 +289,7 @@ export function evaluate(model: Model, shifts: Shifts): Evaluation {
     const delta = worked + leave - contract
     if (delta > 0) violations.push({ severity: 'warning', day: null, employeeId: emp.id, message: `${emp.name} : ${fmtDuration(delta)} d'heures supplémentaires cette semaine.` })
     if (delta < 0) violations.push({ severity: 'warning', day: null, employeeId: emp.id, message: `${emp.name} : il manque ${fmtDuration(-delta)} pour atteindre ${fmtDuration(contract)}.` })
-    return { employeeId: emp.id, workedMinutes: worked, leaveMinutes: leave, contractMinutes: contract, deltaMinutes: delta, perDay }
+    return { employeeId: emp.id, workedMinutes: worked, leaveMinutes: leave, contractMinutes: contract, deltaMinutes: delta, cleaningMinutes: cleaning, perDay }
   })
 
   const order = { error: 0, warning: 1, info: 2 }

@@ -1,5 +1,5 @@
 import { SLOT } from './time'
-import type { Child, DayIndex, RatioStep, Requirement, Rules } from './types'
+import type { Child, CleaningDay, DayIndex, RatioStep, Requirement, Rules } from './types'
 
 /** Nettoie une liste de besoins : tri, suppression des plages vides. */
 export function normalizeRequirements(reqs: Requirement[]): Requirement[] {
@@ -48,6 +48,17 @@ export function requirementsFromChildren(children: Child[], day: DayIndex, rules
 /** Heures-personnes requises sur un jour (en minutes). */
 export function requiredMinutes(reqs: Requirement[]): number {
   return reqs.reduce((acc, r) => acc + (r.end - r.start) * r.staff, 0)
+}
+
+/** Fin de journée effective : au moins la fin réglée, étendue jusqu'à la fin du ménage le plus tardif. */
+export function effectiveDayEnd(cfg: { rules: Rules; requirements: Partial<Record<DayIndex, Requirement[]>>; cleaning?: Partial<Record<DayIndex, CleaningDay>> }): number {
+  let end = cfg.rules.dayEnd
+  for (const d of cfg.rules.openDays) {
+    const opening = dayOpening(normalizeRequirements(cfg.requirements[d] ?? []))
+    const cl = cfg.cleaning?.[d]
+    if (opening && cl && cl.minutes > 0) end = Math.max(end, opening.close + cl.minutes)
+  }
+  return Math.ceil(end / SLOT) * SLOT
 }
 
 export function dayOpening(reqs: Requirement[]): { open: number; close: number } | null {

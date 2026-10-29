@@ -1,7 +1,7 @@
 import { compile } from './model'
 import { evaluate } from './evaluate'
 import { computeSuggestions } from './suggestions'
-import { dayOpening, normalizeRequirements } from './requirements'
+import { dayOpening, effectiveDayEnd, normalizeRequirements } from './requirements'
 import { fmtDuration, toHHMM } from './time'
 import { DAY_LABELS, type DayIndex, type Week } from './types'
 
@@ -40,7 +40,7 @@ export interface WeekReport {
     presentMinutes: number
     missingMinutes: number
   }[]
-  totals: { employeeId: string; employee: string; color: string; worked: number; leave: number; contract: number; delta: number; perDay: Partial<Record<DayIndex, number>> }[]
+  totals: { employeeId: string; employee: string; color: string; worked: number; cleaning: number; leave: number; contract: number; delta: number; perDay: Partial<Record<DayIndex, number>> }[]
   violations: { severity: 'error' | 'warning' | 'info'; message: string }[]
   suggestions: { message: string; detail?: string }[]
 }
@@ -127,14 +127,14 @@ export function buildWeekReport(week: Week, appUrl?: string): WeekReport {
 
   const totals = ev.stats.map((s) => {
     const e = employees.find((x) => x.id === s.employeeId)
-    return { employeeId: s.employeeId, employee: e?.name ?? '?', color: e?.color ?? '#888', worked: s.workedMinutes, leave: s.leaveMinutes, contract: s.contractMinutes, delta: s.deltaMinutes, perDay: s.perDay }
+    return { employeeId: s.employeeId, employee: e?.name ?? '?', color: e?.color ?? '#888', worked: s.workedMinutes, cleaning: s.cleaningMinutes, leave: s.leaveMinutes, contract: s.contractMinutes, delta: s.deltaMinutes, perDay: s.perDay }
   })
 
   return {
     week: { id: week.id, monday: week.monday, label: weekLabelOf(week.monday), status: week.status, notes: week.config.notes },
     appUrl,
     dayStart: config.rules.dayStart,
-    dayEnd: config.rules.dayEnd,
+    dayEnd: effectiveDayEnd(config),
     hasSchedule,
     employees: employees.map((e) => ({ id: e.id, name: e.name, color: e.color, role: e.role, avatar: e.avatar })),
     days,
@@ -162,8 +162,9 @@ export function weekReportToMarkdown(r: WeekReport): string {
     for (const a of d.absences) lines.push(`- ${a.employee} : ${a.label} (${fmtDuration(a.minutes)} comptées)`)
     if (d.missingMinutes > 0) lines.push(`⚠️ Il manque ${fmtDuration(d.missingMinutes)} de présence ce jour.`)
   }
-  lines.push('', '### Récapitulatif', '', '| Personne | Travaillé | Congés | Contrat | Écart |', '|---|---|---|---|---|')
-  for (const t of r.totals) lines.push(`| ${t.employee} | ${fmtDuration(t.worked)} | ${t.leave ? fmtDuration(t.leave) : '—'} | ${fmtDuration(t.contract)} | ${t.delta > 0 ? '+' : ''}${fmtDuration(t.delta)} |`)
+  const anyCleaning = r.totals.some((t) => t.cleaning > 0)
+  lines.push('', '### Récapitulatif', '', `| Personne | Travaillé |${anyCleaning ? ' dont ménage |' : ''} Congés | Contrat | Écart |`, `|---|---|${anyCleaning ? '---|' : ''}---|---|---|`)
+  for (const t of r.totals) lines.push(`| ${t.employee} | ${fmtDuration(t.worked)} |${anyCleaning ? ` ${t.cleaning ? fmtDuration(t.cleaning) : '—'} |` : ''} ${t.leave ? fmtDuration(t.leave) : '—'} | ${fmtDuration(t.contract)} | ${t.delta > 0 ? '+' : ''}${fmtDuration(t.delta)} |`)
   const errors = r.violations.filter((v) => v.severity === 'error')
   const warnings = r.violations.filter((v) => v.severity === 'warning')
   if (errors.length || warnings.length) {

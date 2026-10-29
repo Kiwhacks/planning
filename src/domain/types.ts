@@ -185,6 +185,8 @@ export interface EmployeeWeekStats {
   contractMinutes: number
   /** worked + leave - contract (positif = heures sup). */
   deltaMinutes: number
+  /** Minutes de ménage incluses dans le temps travaillé. */
+  cleaningMinutes: number
   perDay: Partial<Record<DayIndex, number>>
 }
 
