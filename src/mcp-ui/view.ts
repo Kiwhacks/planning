@@ -27,6 +27,9 @@ function render(r: WeekReport) {
   const pct = (t: number) => ((t - r.dayStart) / span) * 100
   const hours: number[] = []
   for (let t = Math.ceil(r.dayStart / 60) * 60; t <= r.dayEnd; t += 60) hours.push(t)
+  const ticks: string[] = []
+  for (let t = Math.ceil(r.dayStart / 15) * 15; t <= r.dayEnd; t += 15) ticks.push(`<b class="${t % 60 === 0 ? 'h' : t % 60 === 30 ? 'hh' : 'q'}" style="left:${pct(t)}%"></b>`)
+  const grid = ticks.join('')
   const errors = r.violations.filter((v) => v.severity === 'error')
   const warnings = r.violations.filter((v) => v.severity === 'warning')
 
@@ -44,7 +47,7 @@ function render(r: WeekReport) {
             bar = `<div class="bar" style="left:${pct(sh.start)}%;width:${pct(sh.end) - pct(sh.start)}%;background:${e.color}" title="${esc(sh.text)}">${brk}${cl}<span>${hhmm(sh.start)}–${hhmm(sh.end)} <em>(${dur(sh.worked)})</em>${sh.locked ? ' 🔒' : ''}</span></div>`
           } else if (ab) bar = `<div class="note">${esc(ab.label)} (${dur(ab.minutes)})</div>`
           const text = sh ? `${sh.text} · ${dur(sh.worked)}` : ab ? `${esc(ab.label)} (${dur(ab.minutes)})` : '—'
-          return `<div class="name">${avatar(e.avatar, e.color)}${esc(e.name)}</div><div class="track">${hours.map((t) => `<b style="left:${pct(t)}%"></b>`).join('')}${bar}</div><div class="txt">${text}</div>`
+          return `<div class="name">${avatar(e.avatar, e.color)}${esc(e.name)}</div><div class="track">${grid}${bar}</div><div class="txt">${text}</div>`
         })
         .join('')
       const req = d.requirements.map((q) => `<div class="req" style="left:${pct(q.start)}%;width:${pct(q.end) - pct(q.start)}%">${q.staff}</div>`).join('') + (d.cleaningEnd && d.close != null ? `<div class="req clean" style="left:${pct(d.close)}%;width:${pct(d.cleaningEnd) - pct(d.close)}%">ménage</div>` : '')
@@ -57,7 +60,7 @@ function render(r: WeekReport) {
       return `<section class="day"><header><h3>${d.label} <small>${esc(d.date)}</small></h3><small>Besoin ${dur(d.requiredMinutes)} · Présence ${dur(d.presentMinutes)}${d.missingMinutes ? ` · <span class="err">manque ${dur(d.missingMinutes)}</span>` : ''}</small></header>
         <div class="grid">
           <div class="hd"></div><div class="axis">${hours.map((t) => `<span style="left:${pct(t)}%">${hhmm(t)}</span>`).join('')}</div>
-          <div class="name muted">Besoin</div><div class="track reqs">${req}</div>
+          <div class="name muted">Besoin</div><div class="track reqs">${grid}${req}</div>
           ${rows}
           <div class="name muted">Présentes</div><div class="covs">${cov}</div>
         </div></section>`

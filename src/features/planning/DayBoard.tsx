@@ -29,6 +29,13 @@ export function DayBoard({ day, week, coverage, onEdit }: Props) {
   const isCleaner = (id: string) => !!cleaning?.employeeIds.includes(id)
   const hours: number[] = []
   for (let t = Math.ceil(rules.dayStart / 60) * 60; t <= dayEnd; t += 60) hours.push(t)
+  // traits de quart d'heure : heure pleine marquée, demi-heure moyenne, quarts fins
+  const ticks: { t: number; cls: string }[] = []
+  for (let t = Math.ceil(rules.dayStart / 15) * 15; t <= dayEnd; t += 15) {
+    const m = t % 60
+    ticks.push({ t, cls: m === 0 ? 'border-foreground/35' : m === 30 ? 'border-foreground/20' : 'border-foreground/10 border-dashed' })
+  }
+  const gridLines = ticks.map((k) => <div key={k.t} className={cn('pointer-events-none absolute inset-y-0 border-l', k.cls)} style={{ left: `${pct(k.t)}%` }} />)
 
   return (
     <Card className="print-break-inside-avoid overflow-hidden">
@@ -127,11 +134,15 @@ export function DayBoard({ day, week, coverage, onEdit }: Props) {
                 {toHHMM(t)}
               </span>
             ))}
+            {ticks.map((k) => (
+              <div key={k.t} className={cn('absolute bottom-0 border-l', k.t % 60 === 0 ? 'h-2 border-foreground/50' : k.t % 60 === 30 ? 'h-1.5 border-foreground/35' : 'h-1 border-foreground/25')} style={{ left: `${pct(k.t)}%` }} />
+            ))}
           </div>
 
           {/* Besoin */}
           <div className="flex items-center text-muted-foreground">Besoin</div>
           <div className="relative h-6 rounded bg-muted/60">
+            {gridLines}
             {reqs.map((r, i) => (
               <div
                 key={i}
@@ -172,10 +183,8 @@ export function DayBoard({ day, week, coverage, onEdit }: Props) {
                   onClick={() => canClick && onEdit(e.id, day, sh)}
                   role={canClick ? 'button' : undefined}
                 >
-                  {/* grille des heures */}
-                  {hours.map((t) => (
-                    <div key={t} className="absolute inset-y-0 border-l border-border/40" style={{ left: `${pct(t)}%` }} />
-                  ))}
+                  {/* grille des heures et quarts d'heure */}
+                  {gridLines}
                   {leave && (
                     <div className="absolute inset-0 flex items-center px-2 text-muted-foreground italic">
                       {leave.label || 'Congé'} ({fmtDuration(leave.minutes)} comptées)
@@ -187,7 +196,7 @@ export function DayBoard({ day, week, coverage, onEdit }: Props) {
                   )}
                   {sh && (
                     <div
-                      className="absolute inset-y-0.5 flex items-center overflow-hidden rounded-md px-1.5 text-[11px] font-medium text-white shadow-sm"
+                      className="absolute inset-y-0.5 z-10 flex items-center overflow-hidden rounded-md px-1.5 text-[11px] font-medium text-white shadow-sm"
                       style={{ left: `${pct(sh.start)}%`, width: `${pct(sh.end) - pct(sh.start)}%`, background: e.color }}
                       title={`${toHHMM(sh.start)}–${toHHMM(sh.end)}${sh.breakStart != null ? ` · pause ${toHHMM(sh.breakStart)}–${toHHMM(sh.breakStart + e.breakMinutes)}` : ''}`}
                     >
