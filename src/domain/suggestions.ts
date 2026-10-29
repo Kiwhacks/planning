@@ -198,6 +198,38 @@ export function computeSuggestions(config: WeekConfig, schedule: Schedule, ev: E
       }
     }
 
+    // 3b. Pauses repas impossibles : tout le monde est requis pendant la fenêtre repas
+    const win = { start: config.rules.breakWindowStart, end: config.rules.breakWindowEnd }
+    for (const d of config.rules.openDays) {
+      const dayErrors = ev.violations.filter((v) => v.severity === 'error' && v.day === d && (v.message.includes('pause repas') || problemRanges(ev).some((r) => r.day === d && r.start < win.end && r.end > win.start)))
+      if (dayErrors.length === 0) continue
+      const reqs = normalizeRequirements(config.requirements[d] ?? [])
+      const maxInWindow = Math.max(0, ...reqs.filter((r) => r.start < win.end && r.end > win.start).map((r) => r.staff))
+      const avail = employees.filter((e) => available(config, e, d) && e.breakMinutes > 0).length + employees.filter((e) => available(config, e, d) && e.breakMinutes === 0).length
+      if (maxInWindow < 2 || avail > maxInWindow) continue
+      out.push({
+        id: `lunch-${d}`,
+        message: `${DAY_LABELS[d]} : ${avail} personne${avail > 1 ? 's' : ''} disponible${avail > 1 ? 's' : ''} pour un besoin de ${maxInWindow} pendant la pause repas (${toHHMM(win.start)}–${toHHMM(win.end)}) : impossible de faire manger tout le monde. Passer le besoin à ${maxInWindow - 1} sur cette fenêtre ?`,
+        detail: 'Les pauses pourront alors se succéder dans la fenêtre repas.',
+        apply: {
+          config: (c) => {
+            const list = normalizeRequirements(c.requirements[d] ?? [])
+            const next: typeof list = []
+            for (const r of list) {
+              if (r.end <= win.start || r.start >= win.end || r.staff < maxInWindow) {
+                next.push(r)
+                continue
+              }
+              if (r.start < win.start) next.push({ start: r.start, end: win.start, staff: r.staff })
+              next.push({ start: Math.max(r.start, win.start), end: Math.min(r.end, win.end), staff: r.staff - 1 })
+              if (r.end > win.end) next.push({ start: win.end, end: r.end, staff: r.staff })
+            }
+            c.requirements[d] = normalizeRequirements(next)
+          },
+        },
+      })
+    }
+
     // 4. Heures manquantes chez une personne alors qu'une autre fait des heures sup.
     const under = ev.stats.filter((s) => s.deltaMinutes < 0)
     const over = ev.stats.filter((s) => s.deltaMinutes > 0)

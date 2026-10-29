@@ -25,6 +25,7 @@ Les données sont enregistrées dans une base PostgreSQL (Neon) via une petite A
 | Jours travaillés, congés, contraintes fixes (heures imposées, jour imposé / interdit) | bloquante |
 | Ménage : les personnes affectées restent jusqu'à la fin du ménage après le départ du dernier enfant | bloquante |
 | Journée fixe, durée maximale par jour, amplitude maximale, pause obligatoire | bloquante |
+| Pause repas : tout créneau couvrant la fenêtre (12h45–15h par défaut, réglable) a une pause placée dans cette fenêtre, même si la journée est courte | bloquante |
 | Heures hebdomadaires du contrat (heures sup. pénalisées et réparties, heures manquantes pénalisées) | forte |
 | Présence en dehors des horaires de besoin, journées trop courtes | moyenne |
 | Pause dans la fenêtre souhaitée et pas en tout début / fin de journée, sur-effectif, référente / relais présente | faible |

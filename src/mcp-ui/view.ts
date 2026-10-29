@@ -74,7 +74,7 @@ function render(r: WeekReport) {
       <div><h2>${esc(r.week.label)}</h2><span class="badge ${r.week.status}">${r.week.status === 'validated' ? 'Validée' : 'Brouillon'}</span></div>
       <div class="pills">${errors.length ? `<span class="pill err">${errors.length} bloquant${errors.length > 1 ? 's' : ''}</span>` : '<span class="pill ok">Contraintes respectées</span>'}${warnings.length ? `<span class="pill warn">${warnings.length} avertissement${warnings.length > 1 ? 's' : ''}</span>` : ''}${ot ? `<span class="pill warn">+${dur(ot)} sup.</span>` : ''}${r.appUrl ? `<a class="pill link" href="${esc(r.appUrl)}" id="open-app">Ouvrir l’application ↗</a>` : ''}</div>
     </header>
-    ${r.hasSchedule ? '' : '<p class="muted">Aucun planning généré pour cette semaine. Demandez « génère le planning ».</p>'}
+    ${r.hasSchedule ? '<div class="legend"><span><i></i>travail</span><span><i class="p"></i>pause</span><span><i class="m"></i>ménage</span></div>' : '<p class="muted">Aucun planning généré pour cette semaine. Demandez « génère le planning ».</p>'}
     ${dayHtml}
     <section class="day"><header><h3>Récapitulatif</h3></header>
       <table><thead><tr><th>Personne</th><th>Travaillé</th><th>Congés</th><th>Contrat</th><th>Écart</th></tr></thead><tbody>${totals}</tbody></table>

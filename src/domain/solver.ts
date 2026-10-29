@@ -232,12 +232,19 @@ function anneal(model: Model, start: Shifts, iterations: number, rand: () => num
         if (!o) continue
         const emp2 = model.employees[e2]
         if (fixed || emp2.fixedDaily >= 0) continue
-        const swapStart = rand() < 0.5
-        if (swapStart ? pinS || emp2.pinStart[d] >= 0 : pinE || emp2.pinEnd[d] >= 0) continue
         const sh2: IShift = { ...o }
-        if (swapStart) [sh.s, sh2.s] = [sh2.s, sh.s]
-        else [sh.e, sh2.e] = [sh2.e, sh.e]
-        if (!clampShift(model, emp, d, sh) || !clampShift(model, emp2, d, sh2)) continue
+        const mode = rand()
+        if (mode < 0.34 && sh.b >= 0 && sh2.b >= 0) {
+          // échange des pauses (utile pour caler les pauses repas sans trou de couverture)
+          ;[sh.b, sh2.b] = [sh2.b, sh.b]
+          if (sh.b <= sh.s || sh.b + emp.breakSlots >= sh.e || sh2.b <= sh2.s || sh2.b + emp2.breakSlots >= sh2.e) continue
+        } else {
+          const swapStart = mode < 0.67
+          if (swapStart ? pinS || emp2.pinStart[d] >= 0 : pinE || emp2.pinEnd[d] >= 0) continue
+          if (swapStart) [sh.s, sh2.s] = [sh2.s, sh.s]
+          else [sh.e, sh2.e] = [sh2.e, sh.e]
+          if (!clampShift(model, emp, d, sh) || !clampShift(model, emp2, d, sh2)) continue
+        }
         changes.push({ e, d, sh }, { e: e2, d, sh: sh2 })
       }
     }
@@ -351,7 +358,8 @@ export function polish(model: Model, shifts: Shifts, maxPasses = 60): { shifts: 
   for (let pass = 0; pass < 10; pass++) {
     let improved = false
     for (const d of model.days) {
-      if (st.dayC[d] < model.W.UNDER) continue
+      const breakIssue = st.shiftC.some((row) => row[d] >= model.W.BREAKWIN_HARD)
+      if (st.dayC[d] < model.W.UNDER && !breakIssue) continue
       const present = [...Array(E).keys()].filter((e) => st.shifts[e][d])
       let done = false
       for (let i = 0; i < present.length && !done; i++) {

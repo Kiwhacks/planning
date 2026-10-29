@@ -54,6 +54,8 @@ export interface Weights {
   OVER: number
   SHORT: number
   BREAKWIN: number
+  /** Pause repas hors de la fenêtre alors que le créneau la couvre (quasi bloquant). */
+  BREAKWIN_HARD: number
   BREAKEDGE: number
   NOREF: number
   RELAIS: number
@@ -98,6 +100,7 @@ export function makeWeights(cfg: WeekConfig): Weights {
     OVER: 4,
     SHORT: 40,
     BREAKWIN: 15,
+    BREAKWIN_HARD: 400,
     BREAKEDGE: 40,
     NOREF: refImp * 2,
     RELAIS: refImp * 0.5,
@@ -283,15 +286,28 @@ export function workedSlots(emp: CEmployee, sh: IShift): number {
   return sh.e - sh.s - (sh.b >= 0 ? emp.breakSlots : 0)
 }
 
-export function breakRequired(emp: CEmployee, sh: IShift): boolean {
+/**
+ * La pause repas tient-elle dans le créneau, à l'intérieur de la fenêtre (ex. 12h45–15h) ?
+ * La pause doit être strictement à l'intérieur du créneau (au moins un quart d'heure avant et après).
+ */
+export function lunchFits(model: Model, emp: CEmployee, sh: IShift): boolean {
   if (emp.breakSlots <= 0) return false
-  if (emp.breakMinShift > 0 && sh.e - sh.s <= emp.breakMinShift) return false
-  return true
+  return Math.min(sh.e - 1, model.breakWinEnd) - Math.max(sh.s + 1, model.breakWinStart) >= emp.breakSlots
+}
+
+/**
+ * Une pause est due si la journée dépasse la durée minimale… ou si le créneau couvre la fenêtre
+ * de pause repas (il faut pouvoir manger), quelle que soit sa durée.
+ */
+export function breakRequired(model: Model, emp: CEmployee, sh: IShift): boolean {
+  if (emp.breakSlots <= 0) return false
+  if (emp.breakMinShift === 0 || sh.e - sh.s > emp.breakMinShift) return true
+  return lunchFits(model, emp, sh)
 }
 
 /** Replace la pause dans le créneau si nécessaire (au milieu, dans la fenêtre si possible). */
 export function fixBreak(model: Model, emp: CEmployee, sh: IShift): void {
-  if (!breakRequired(emp, sh)) {
+  if (!breakRequired(model, emp, sh)) {
     sh.b = -1
     return
   }
@@ -302,12 +318,13 @@ export function fixBreak(model: Model, emp: CEmployee, sh: IShift): void {
     sh.b = -1
     return
   }
-  if (sh.b >= lo && sh.b <= hi) return
-  const mid = Math.round((sh.s + sh.e) / 2 - brk / 2)
-  let b = Math.max(lo, Math.min(hi, mid))
-  // essayer de rentrer dans la fenêtre de pause
   const winLo = Math.max(lo, model.breakWinStart)
   const winHi = Math.min(hi, model.breakWinEnd - brk)
-  if (winLo <= winHi) b = Math.max(winLo, Math.min(winHi, mid))
+  const inWindow = winLo <= winHi
+  // pause déjà valide (et dans la fenêtre si celle-ci est atteignable) : on ne touche à rien
+  if (sh.b >= lo && sh.b <= hi && (!inWindow || (sh.b >= winLo && sh.b <= winHi))) return
+  const mid = Math.round((sh.s + sh.e) / 2 - brk / 2)
+  let b = Math.max(lo, Math.min(hi, mid))
+  if (inWindow) b = Math.max(winLo, Math.min(winHi, Math.round((Math.max(sh.s, model.breakWinStart) + Math.min(sh.e, model.breakWinEnd)) / 2 - brk / 2)))
   sh.b = b
 }

@@ -1,6 +1,6 @@
 import { SLOT, fmtDuration, toHHMM } from './time'
 import { DAY_LABELS, type DayCoverage, type DayIndex, type EmployeeWeekStats, type Evaluation, type Violation } from './types'
-import { breakRequired, workedSlots, type CEmployee, type IShift, type Model, type Shifts } from './model'
+import { breakRequired, lunchFits, workedSlots, type CEmployee, type IShift, type Model, type Shifts } from './model'
 
 /** Tampons réutilisés pour éviter les allocations dans la boucle du solveur. */
 export class Scratch {
@@ -106,14 +106,15 @@ export function shiftCost(model: Model, emp: CEmployee, d: number, sh: IShift | 
   if (amp > emp.maxAmp) cost += W.HARD * (amp - emp.maxAmp)
   if (emp.pinStart[d] >= 0 && sh.s !== emp.pinStart[d]) cost += W.HARD * Math.abs(sh.s - emp.pinStart[d])
   if (emp.pinEnd[d] >= 0 && sh.e !== emp.pinEnd[d]) cost += W.HARD * Math.abs(sh.e - emp.pinEnd[d])
-  if (breakRequired(emp, sh)) {
+  if (breakRequired(model, emp, sh)) {
     if (sh.b < 0 || sh.b <= sh.s || sh.b + emp.breakSlots >= sh.e) cost += W.HARD
     else {
       const bEnd = sh.b + emp.breakSlots
       let outside = 0
       if (sh.b < model.breakWinStart) outside += Math.min(bEnd, model.breakWinStart) - sh.b
       if (bEnd > model.breakWinEnd) outside += bEnd - Math.max(sh.b, model.breakWinEnd)
-      cost += W.BREAKWIN * outside
+      // si la pause repas peut tenir dans la fenêtre, elle doit y être
+      cost += (lunchFits(model, emp, sh) ? W.BREAKWIN_HARD : W.BREAKWIN) * outside
       const edge = 4 // 1h
       if (sh.b - sh.s < edge) cost += W.BREAKEDGE * (edge - (sh.b - sh.s))
       if (sh.e - bEnd < edge) cost += W.BREAKEDGE * (edge - (sh.e - bEnd))
@@ -266,9 +267,13 @@ export function evaluate(model: Model, shifts: Shifts): Evaluation {
         if (emp.fixedDaily < 0 && w < emp.minDaily * SLOT) violations.push({ severity: 'warning', day: d as DayIndex, employeeId: emp.id, message: `${dl} : journée très courte pour ${emp.name} (${fmtDuration(w)}).` })
         if (emp.pinStart[d] >= 0 && sh.s !== emp.pinStart[d]) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: `${dl} : ${emp.name} devrait commencer à ${time(emp.pinStart[d])} (planifié ${time(sh.s)}).` })
         if (emp.pinEnd[d] >= 0 && sh.e !== emp.pinEnd[d]) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: emp.cleans[d] ? `${dl} : ${emp.name} est affectée au ménage et devrait finir à ${time(emp.pinEnd[d])} (planifié ${time(sh.e)}).` : `${dl} : ${emp.name} devrait finir à ${time(emp.pinEnd[d])} (planifié ${time(sh.e)}).` })
-        if (breakRequired(emp, sh)) {
-          if (sh.b < 0 || sh.b <= sh.s || sh.b + emp.breakSlots >= sh.e) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: `${dl} : pause manquante ou mal placée pour ${emp.name}.` })
-          else if (sh.b < model.breakWinStart || sh.b + emp.breakSlots > model.breakWinEnd) violations.push({ severity: 'info', day: d as DayIndex, employeeId: emp.id, message: `${dl} : pause de ${emp.name} à ${time(sh.b)}, hors de la fenêtre habituelle.` })
+        if (breakRequired(model, emp, sh)) {
+          const win = `${time(model.breakWinStart)}–${time(model.breakWinEnd)}`
+          if (sh.b < 0 || sh.b <= sh.s || sh.b + emp.breakSlots >= sh.e) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: `${dl} : pause manquante ou mal placée pour ${emp.name}${lunchFits(model, emp, sh) ? ` (pause repas due entre ${win})` : ''}.` })
+          else if (sh.b < model.breakWinStart || sh.b + emp.breakSlots > model.breakWinEnd) {
+            if (lunchFits(model, emp, sh)) violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: `${dl} : ${emp.name} doit prendre sa pause repas entre ${win} (planifiée à ${time(sh.b)}).` })
+            else violations.push({ severity: 'info', day: d as DayIndex, employeeId: emp.id, message: `${dl} : pause de ${emp.name} à ${time(sh.b)}, hors de la fenêtre ${win} (créneau trop court pour y tenir).` })
+          }
         }
       } else if (emp.mustWork[d]) {
         violations.push({ severity: 'error', day: d as DayIndex, employeeId: emp.id, message: emp.cleans[d] ? `${dl} : ${emp.name} est affectée au ménage mais n'est pas planifiée.` : `${dl} : ${emp.name} devrait travailler (contrainte fixe) mais n'est pas planifiée.` })

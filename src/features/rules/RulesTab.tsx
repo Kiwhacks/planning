@@ -65,11 +65,11 @@ export function RulesTab({ week }: { week: Week }) {
           </div>
         </SectionCard>
 
-        <SectionCard title="Pauses" description="Fenêtre souhaitée et condition de déclenchement.">
+        <SectionCard title="Pauses" description="Pause repas : dès qu’un créneau couvre cette fenêtre, la personne y prend sa pause, même si sa journée est courte.">
           <div className="grid gap-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label>Pauses de préférence à partir de</Label>
+                <Label>Pause repas à partir de</Label>
                 <TimeInput value={r.breakWindowStart} onChange={(v) => v != null && set('breakWindowStart', v)} />
               </div>
               <div className="space-y-1">
@@ -78,9 +78,9 @@ export function RulesTab({ week }: { week: Week }) {
               </div>
             </div>
             <div className="space-y-1">
-              <Label>Pause due seulement si la journée dépasse</Label>
+              <Label>Hors fenêtre repas, pause due seulement si la journée dépasse</Label>
               <DurationInput value={r.breakMinShiftMinutes} onChange={(m) => m != null && set('breakMinShiftMinutes', m)} placeholder="0h = toujours" />
-              <p className="text-xs text-muted-foreground">0h : la pause de la personne s’applique à chaque journée travaillée.</p>
+              <p className="text-xs text-muted-foreground">0h : la pause de la personne s’applique à chaque journée travaillée. Un créneau qui couvre la fenêtre repas a toujours une pause, placée dans la fenêtre.</p>
             </div>
           </div>
         </SectionCard>

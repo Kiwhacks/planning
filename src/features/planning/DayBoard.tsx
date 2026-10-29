@@ -203,10 +203,12 @@ export function DayBoard({ day, week, coverage, onEdit }: Props) {
                       )}
                       {isCleaner(e.id) && cleanStart != null && sh.end > cleanStart && (
                         <div
-                          className="absolute inset-y-0 bg-violet-900/35"
-                          style={{ left: `${((cleanStart - sh.start) / (sh.end - sh.start)) * 100}%`, width: `${((sh.end - cleanStart) / (sh.end - sh.start)) * 100}%`, backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,.35) 0 2px, transparent 2px 6px)' }}
+                          className="absolute inset-y-0 flex items-center overflow-hidden border-l border-white/80 pl-1 text-[9px] font-semibold tracking-wide text-white uppercase"
+                          style={{ left: `${((cleanStart - sh.start) / (sh.end - sh.start)) * 100}%`, width: `${((sh.end - cleanStart) / (sh.end - sh.start)) * 100}%`, backgroundColor: 'rgba(0,0,0,.28)', backgroundImage: 'radial-gradient(circle, rgba(255,255,255,.95) 1.2px, transparent 1.7px)', backgroundSize: '6px 6px' }}
                           title={`Ménage ${toHHMM(cleanStart)}–${toHHMM(sh.end)}`}
-                        />
+                        >
+                          {sh.end - cleanStart >= 60 && <span className="relative z-10 truncate drop-shadow-sm">ménage</span>}
+                        </div>
                       )}
                       <span className="relative z-10 truncate drop-shadow-sm">
                         {toHHMM(sh.start)}–{toHHMM(sh.end)}

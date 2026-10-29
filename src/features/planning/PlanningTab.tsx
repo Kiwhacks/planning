@@ -18,6 +18,7 @@ import { ShiftDialog, type ShiftDialogTarget } from './ShiftDialog'
 import { SummaryTable } from './SummaryTable'
 import { Diagnostics } from './Diagnostics'
 import { Suggestions } from './Suggestions'
+import { Legend } from './Legend'
 import { computeSuggestions, type Suggestion } from '@/domain/suggestions'
 
 export function PlanningTab({ onGoTo }: { onGoTo: (tab: string) => void }) {
@@ -197,6 +198,8 @@ function WeekPlanning({ weekId, onGoTo }: { weekId: string; onGoTo: (tab: string
           )}
         </div>
       )}
+
+      {hasSchedule && <Legend />}
 
       <div className="grid min-w-0 gap-4">
         {config.rules.openDays.map((d) => (
