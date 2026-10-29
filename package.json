@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && tsx scripts/build-mcp-ui.ts && tsx scripts/build-api.ts && vite build",
+    "build": "tsx scripts/build-mcp-ui.ts && tsc -b && tsx scripts/build-api.ts && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "dev:api": "tsx scripts/api-server.ts",
-    "typecheck": "tsc -b",
+    "typecheck": "tsx scripts/build-mcp-ui.ts && tsc -b",
     "build:mcp-ui": "tsx scripts/build-mcp-ui.ts",
     "mcp:test": "tsx scripts/mcp-client-test.ts",
     "build:api": "tsx scripts/build-mcp-ui.ts && tsx scripts/build-api.ts"
